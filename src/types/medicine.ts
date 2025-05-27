@@ -3,6 +3,7 @@ export interface Medicine {
     name: string;
     description: string;
     manufacture: string;
+    stock?: Stock;
 }
 
 export interface Stock {

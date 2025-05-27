@@ -14,35 +14,87 @@ import {
     Chip,
     IconButton,
     useTheme,
-    alpha
+    alpha,
+    TextField,
+    InputAdornment,
+    Card,
+    CardContent,
+    Skeleton,
+    Alert,
+    ToggleButton,
+    ToggleButtonGroup,
+    Stack,
+    Tooltip
 } from '@mui/material';
 import { Medicine } from '../types/medicine';
 import { medicineApi } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import debounce from 'lodash/debounce';
 
 export const MedicineList: React.FC = () => {
     const [medicines, setMedicines] = useState<Medicine[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchType, setSearchType] = useState<'contains' | 'startsWith'>('startsWith');
     const [page, setPage] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const navigate = useNavigate();
     const theme = useTheme();
 
-    const loadMedicines = useCallback(async () => {
+    const fetchMedicines = async (search?: string) => {
         try {
-            const response = await medicineApi.getAllMedicines(page, rowsPerPage);
-            setMedicines(response.content);
-            setTotalElements(response.totalElements);
-        } catch (error) {
-            console.error('Error loading medicines:', error);
+            setLoading(true);
+            setError(null);
+            if (search) {
+                const data = await medicineApi.searchMedicines(search, searchType);
+                setMedicines(data);
+                setTotalElements(data.length);
+            } else {
+                const response = await medicineApi.getAllMedicines(page, rowsPerPage);
+                setMedicines(response.content);
+                setTotalElements(response.totalElements);
+            }
+        } catch (err) {
+            setError('Failed to fetch medicines');
+            console.error('Error fetching medicines:', err);
+        } finally {
+            setLoading(false);
         }
-    }, [page, rowsPerPage]);
+    };
+
+    const debouncedSearch = debounce((term: string) => {
+        fetchMedicines(term);
+    }, 300);
 
     useEffect(() => {
-        loadMedicines();
-    }, [loadMedicines]);
+        fetchMedicines();
+    }, [page, rowsPerPage]);
+
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        setSearchTerm(value);
+        setPage(0); // Reset to first page when searching
+        debouncedSearch(value);
+    };
+
+    const handleSearchTypeChange = (
+        event: React.MouseEvent<HTMLElement>,
+        newSearchType: 'contains' | 'startsWith'
+    ) => {
+        if (newSearchType !== null) {
+            setSearchType(newSearchType);
+            if (searchTerm) {
+                fetchMedicines(searchTerm);
+            }
+        }
+    };
 
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
@@ -57,14 +109,15 @@ export const MedicineList: React.FC = () => {
         <Box>
             <Box 
                 sx={{ 
-                    p: 3,
+                    py: 2,
+                    px: 3,
                     borderBottom: 1,
                     borderColor: 'divider',
                     backgroundColor: alpha(theme.palette.primary.main, 0.02)
                 }}
             >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h4" component="h1" color="primary">
+                    <Typography variant="h5" component="h1" color="primary" sx={{ fontWeight: 500 }}>
                         Medicine Inventory
                     </Typography>
                     <Button
@@ -86,61 +139,177 @@ export const MedicineList: React.FC = () => {
                         Add New Medicine
                     </Button>
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Manage and monitor your medicine inventory efficiently
-                </Typography>
             </Box>
+            
+            <Stack direction="row" spacing={2} sx={{ px: 2, py: 2 }}>
+                <TextField
+                    sx={{
+                        width: '60%',
+                        '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                                borderColor: alpha(theme.palette.text.primary, 0.1),
+                                borderWidth: '1px'
+                            },
+                            '&:hover fieldset': {
+                                borderColor: alpha(theme.palette.text.primary, 0.2)
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: theme.palette.primary.main
+                            }
+                        }
+                    }}
+                    placeholder="Search medicines by name..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon color="action" />
+                            </InputAdornment>
+                        ),
+                        sx: {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                            '&:hover': {
+                                backgroundColor: alpha(theme.palette.primary.main, 0.03)
+                            }
+                        }
+                    }}
+                />
+                <ToggleButtonGroup
+                    value={searchType}
+                    exclusive
+                    onChange={handleSearchTypeChange}
+                    aria-label="search type"
+                    size="small"
+                >
+                    <ToggleButton 
+                        value="contains" 
+                        aria-label="contains search"
+                        sx={{
+                            px: 2,
+                            whiteSpace: 'nowrap',
+                            '&.Mui-selected': {
+                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                color: theme.palette.primary.main,
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.15),
+                                }
+                            }
+                        }}
+                    >
+                        <Tooltip title="Search anywhere in name">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <FilterAltIcon sx={{ mr: 0.5 }} />
+                                Contains
+                            </Box>
+                        </Tooltip>
+                    </ToggleButton>
+                    <ToggleButton 
+                        value="startsWith" 
+                        aria-label="starts with search"
+                        sx={{
+                            px: 2,
+                            whiteSpace: 'nowrap',
+                            '&.Mui-selected': {
+                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                color: theme.palette.primary.main,
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.15),
+                                }
+                            }
+                        }}
+                    >
+                        <Tooltip title="Search from start of name">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <SearchIcon sx={{ mr: 0.5 }} />
+                                Starts With
+                            </Box>
+                        </Tooltip>
+                    </ToggleButton>
+                </ToggleButtonGroup>
+            </Stack>
+            
+            {error && (
+                <Alert severity="error" sx={{ mx: 2, mb: 2.5 }}>
+                    {error}
+                </Alert>
+            )}
             <TableContainer>
-                <Table>
+                <Table size="medium">
                     <TableHead>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Manufacturer</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                            <TableCell sx={{ fontWeight: 600, py: 2 }}>ID</TableCell>
+                            <TableCell sx={{ fontWeight: 600, py: 2 }}>Name</TableCell>
+                            <TableCell sx={{ fontWeight: 600, py: 2 }}>Description</TableCell>
+                            <TableCell sx={{ fontWeight: 600, py: 2 }}>Manufacturer</TableCell>
+                            <TableCell sx={{ fontWeight: 600, py: 2 }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {medicines.map((medicine) => (
-                            <TableRow 
-                                key={medicine.id}
-                                sx={{ 
-                                    '&:hover': { 
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.02)
-                                    },
-                                    transition: 'background-color 0.2s ease-in-out'
-                                }}
-                            >
-                                <TableCell>
-                                    <Chip 
-                                        label={medicine.id} 
-                                        size="small" 
-                                        sx={{ 
-                                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                            color: theme.palette.primary.main,
-                                            fontWeight: 500
-                                        }}
-                                    />
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
-                                <TableCell>{medicine.description}</TableCell>
-                                <TableCell>{medicine.manufacture}</TableCell>
-                                <TableCell>
-                                    <IconButton
-                                        color="primary"
-                                        onClick={() => navigate(`/medicines/${medicine.id}`)}
-                                        sx={{ 
-                                            '&:hover': {
-                                                backgroundColor: alpha(theme.palette.primary.main, 0.1)
-                                            }
-                                        }}
-                                    >
-                                        <VisibilityIcon />
-                                    </IconButton>
+                        {loading ? (
+                            Array.from(new Array(5)).map((_, index) => (
+                                <TableRow key={index}>
+                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : medicines.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                                    <Typography color="text.secondary">
+                                        {searchTerm ? 'No medicines found matching your search' : 'No medicines available'}
+                                    </Typography>
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            medicines.map((medicine) => (
+                                <TableRow 
+                                    key={medicine.id}
+                                    sx={{ 
+                                        '&:hover': { 
+                                            backgroundColor: alpha(theme.palette.primary.main, 0.02)
+                                        },
+                                        transition: 'background-color 0.2s ease-in-out',
+                                        '& .MuiTableCell-root': {
+                                            py: 1.5
+                                        }
+                                    }}
+                                >
+                                    <TableCell>
+                                        <Chip 
+                                            label={medicine.id} 
+                                            size="small" 
+                                            sx={{ 
+                                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                                color: theme.palette.primary.main,
+                                                fontWeight: 500,
+                                                height: '28px'
+                                            }}
+                                        />
+                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
+                                    <TableCell>{medicine.description}</TableCell>
+                                    <TableCell>{medicine.manufacture}</TableCell>
+                                    <TableCell>
+                                        <IconButton
+                                            size="medium"
+                                            color="primary"
+                                            onClick={() => navigate(`/medicines/${medicine.id}`)}
+                                            sx={{ 
+                                                '&:hover': {
+                                                    backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                                                }
+                                            }}
+                                        >
+                                            <VisibilityIcon />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
                 <TablePagination
@@ -152,7 +321,10 @@ export const MedicineList: React.FC = () => {
                     onRowsPerPageChange={handleChangeRowsPerPage}
                     sx={{
                         borderTop: 1,
-                        borderColor: 'divider'
+                        borderColor: 'divider',
+                        '& .MuiTablePagination-toolbar': {
+                            minHeight: '52px'
+                        }
                     }}
                 />
             </TableContainer>
