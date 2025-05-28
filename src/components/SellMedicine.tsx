@@ -65,6 +65,14 @@ export const SellMedicine: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
+    const handleFocusInput = (field: 'quantity' | 'price') => {
+        if (field === 'quantity' && quantity === 0) {
+            setQuantity('' as any);
+        } else if (field === 'price' && price === 0) {
+            setPrice('' as any);
+        }
+    };
+
     useEffect(() => {
         fetchMedicines();
     }, []);
@@ -287,6 +295,7 @@ export const SellMedicine: React.FC = () => {
                                             label="Quantity"
                                             value={quantity}
                                             onChange={(e) => setQuantity(Number(e.target.value))}
+                                            onFocus={() => handleFocusInput('quantity')}
                                             error={!!formErrors.quantity}
                                             helperText={formErrors.quantity}
                                             size="small"
@@ -301,11 +310,12 @@ export const SellMedicine: React.FC = () => {
                                             label="Price"
                                             value={price}
                                             onChange={(e) => setPrice(Number(e.target.value))}
+                                            onFocus={() => handleFocusInput('price')}
                                             error={!!formErrors.price}
                                             helperText={formErrors.price}
                                             size="small"
                                             InputProps={{
-                                                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                                                startAdornment: <InputAdornment position="start">₹</InputAdornment>,
                                                 sx: { backgroundColor: 'transparent' }
                                             }}
                                         />
@@ -365,9 +375,9 @@ export const SellMedicine: React.FC = () => {
                                                 <TableRow key={index}>
                                                     <TableCell>{item.medicineName}</TableCell>
                                                     <TableCell align="right">{item.quantity}</TableCell>
-                                                    <TableCell align="right">${item.price}</TableCell>
+                                                    <TableCell align="right">₹{item.price}</TableCell>
                                                     <TableCell align="right">
-                                                        ${(item.quantity * item.price).toFixed(2)}
+                                                        ₹{(item.quantity * item.price).toFixed(2)}
                                                     </TableCell>
                                                     <TableCell align="right">{item.expDate}</TableCell>
                                                     <TableCell align="center">
@@ -388,7 +398,7 @@ export const SellMedicine: React.FC = () => {
                                                     Total Amount:
                                                 </TableCell>
                                                 <TableCell align="right" sx={{ fontWeight: 600 }}>
-                                                    ${calculateTotal().toFixed(2)}
+                                                    ₹{calculateTotal().toFixed(2)}
                                                 </TableCell>
                                                 <TableCell colSpan={2} />
                                             </TableRow>

@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import { CustomThemeProvider } from './theme/ThemeContext';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AppRoutes } from './routes';
 
 function App() {
@@ -9,7 +11,9 @@ function App() {
         <CustomThemeProvider>
             <CssBaseline />
             <Router>
-                <AppRoutes />
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <AppRoutes />
+                </LocalizationProvider>
             </Router>
         </CustomThemeProvider>
     );

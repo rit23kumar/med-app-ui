@@ -23,4 +23,16 @@ export interface PageResponse<T> {
     totalPages: number;
     size: number;
     number: number;
+}
+
+export interface BatchMedicineResponse {
+    successfulMedicines: Medicine[];
+    failedMedicines: FailedMedicine[];
+    totalSuccess: number;
+    totalFailed: number;
+}
+
+export interface FailedMedicine {
+    name: string;
+    reason: string;
 } 

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Medicine, MedicineWithStock, PageResponse } from '../types/medicine';
+import { Medicine, MedicineWithStock, PageResponse, BatchMedicineResponse } from '../types/medicine';
 import { Sale, CreateSaleRequest } from '../types/sale';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -24,6 +24,11 @@ export const medicineApi = {
 
     addMedicine: async (medicine: Medicine): Promise<Medicine> => {
         const response = await api.post('/medicines', medicine);
+        return response.data;
+    },
+
+    addMedicines: async (medicines: Medicine[]): Promise<BatchMedicineResponse> => {
+        const response = await api.post('/medicines/batch', medicines);
         return response.data;
     },
 
