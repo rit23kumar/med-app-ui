@@ -68,7 +68,6 @@ const AddMedicineDialog: React.FC<AddMedicineDialogProps> = ({ open, onClose }) 
                         fullWidth
                         multiline
                         rows={3}
-                        required
                         autoComplete="off"
                     />
                     <TextField
@@ -77,7 +76,6 @@ const AddMedicineDialog: React.FC<AddMedicineDialogProps> = ({ open, onClose }) 
                         value={medicine.manufacture}
                         onChange={handleChange}
                         fullWidth
-                        required
                         autoComplete="off"
                     />
                 </Box>
@@ -88,7 +86,7 @@ const AddMedicineDialog: React.FC<AddMedicineDialogProps> = ({ open, onClose }) 
                     onClick={handleSubmit}
                     variant="contained"
                     color="primary"
-                    disabled={!medicine.name || !medicine.description || !medicine.manufacture}
+                    disabled={!medicine.name}
                 >
                     Add Medicine
                 </Button>

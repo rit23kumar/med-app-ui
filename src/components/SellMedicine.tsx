@@ -36,7 +36,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 interface sellItem {
     medicineId: number;
@@ -113,7 +113,7 @@ export const SellMedicine: React.FC = () => {
             if (newSelected[batch.id]) {
                 delete newSelected[batch.id];
             } else {
-                newSelected[batch.id] = { batch, quantity: 0 };
+                newSelected[batch.id] = { batch, quantity: null as unknown as number };
             }
             return newSelected;
         });
@@ -128,6 +128,27 @@ export const SellMedicine: React.FC = () => {
     };
 
     const handleQuantityChange = (batchId: number, value: number) => {
+        const batch = availableBatches.find(b => b.id === batchId);
+        if (!batch || !selectedMedicine) return;
+
+        // Calculate existing quantity for this batch from already added items
+        const existingQuantity = sellItems
+            .filter(item => item.medicineId === selectedMedicine.id && item.batchId === batchId)
+            .reduce((sum, item) => sum + item.quantity, 0);
+
+        // Validate against available quantity including existing items
+        const totalQuantity = existingQuantity + value;
+        if (totalQuantity > batch.availableQuantity) {
+            setFormErrors(prev => ({
+                ...prev,
+                quantities: {
+                    ...prev.quantities,
+                    [batchId]: `Total quantity (${totalQuantity}) exceeds available stock (${batch.availableQuantity})`
+                }
+            }));
+            return;
+        }
+
         setSelectedBatches(prev => ({
             ...prev,
             [batchId]: {
@@ -135,6 +156,7 @@ export const SellMedicine: React.FC = () => {
                 quantity: value
             }
         }));
+        
         // Clear any errors for this batch
         setFormErrors(prev => ({
             ...prev,
@@ -179,6 +201,39 @@ export const SellMedicine: React.FC = () => {
 
     const handleAddItem = () => {
         if (!validateItemForm() || !selectedMedicine) return;
+
+        // Check if any of these items are already in the list
+        const existingQuantities = sellItems
+            .filter(item => item.medicineId === selectedMedicine.id)
+            .reduce((acc, item) => {
+                const batchTotal = acc[item.batchId] || 0;
+                return {
+                    ...acc,
+                    [item.batchId]: batchTotal + item.quantity
+                };
+            }, {} as { [key: number]: number });
+
+        // Validate total quantities for each batch
+        let hasQuantityError = false;
+        Object.values(selectedBatches).forEach(({ batch, quantity }) => {
+            const existingQuantity = existingQuantities[batch.id] || 0;
+            const totalQuantity = existingQuantity + quantity;
+            
+            if (totalQuantity > batch.availableQuantity) {
+                setFormErrors(prev => ({
+                    ...prev,
+                    quantities: {
+                        ...prev.quantities,
+                        [batch.id]: `Total quantity (${totalQuantity}) exceeds available stock (${batch.availableQuantity})`
+                    }
+                }));
+                hasQuantityError = true;
+            }
+        });
+
+        if (hasQuantityError) {
+            return;
+        }
 
         const newItems: sellItem[] = Object.values(selectedBatches).map(({ batch, quantity }) => ({
             medicineId: selectedMedicine.id!,
@@ -227,15 +282,49 @@ export const SellMedicine: React.FC = () => {
 
             await sellApi.createsell(sellRequest);
             setShowSuccess(true);
+            // Reset form
+            setsellItems([]);
+            setCustomer('');
+            setSelectedMedicine(null);
+            setSelectedBatches({});
+            
+            // Hide success message after 2 seconds
             setTimeout(() => {
-                navigate('/');
+                setShowSuccess(false);
             }, 2000);
-        } catch (error) {
-            setError('Failed to create sell. Please try again.');
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || 
+                               error.response?.data?.error || 
+                               error.message || 
+                               'Failed to create sell. Please try again.';
+            setError(errorMessage);
             console.error('Error creating sell:', error);
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const getRemainingDays = (expDate: string) => {
+        const today = new Date();
+        const expiryDate = new Date(expDate);
+        return differenceInDays(expiryDate, today);
+    };
+
+    const getExpiryColor = (remainingDays: number) => {
+        if (remainingDays < 0) return 'error.main';
+        if (remainingDays < 30) return 'error.main';
+        if (remainingDays <= 90) return 'warning.main';
+        return 'success.main';
+    };
+
+    const formatExpiryText = (expDate: string) => {
+        const remainingDays = getRemainingDays(expDate);
+        const formattedDate = format(new Date(expDate), 'MMM dd, yyyy');
+        
+        if (remainingDays < 0) {
+            return `Expiry: ${formattedDate} (Expired ${Math.abs(remainingDays)} days ago)`;
+        }
+        return `Expiry: ${formattedDate} (${remainingDays} Days Remaining)`;
     };
 
     return (
@@ -350,13 +439,17 @@ export const SellMedicine: React.FC = () => {
                                         )}
                                     />
 
-                                    {selectedMedicine && availableBatches.length > 0 && (
+                                    {selectedMedicine && (
+                                        availableBatches.length > 0 ? (
                                         <Paper variant="outlined" sx={{ p: 2 }}>
                                             <Typography variant="subtitle2" gutterBottom>
-                                                Available Batches
+                                                Available Batches (Total Available - {availableBatches.reduce((sum, batch) => sum + batch.availableQuantity, 0)})
                                             </Typography>
                                             <Stack spacing={2}>
-                                                {availableBatches.map((batch) => (
+                                                {availableBatches.map((batch) => {
+                                                    const remainingDays = getRemainingDays(batch.expDate);
+                                                    const isExpired = remainingDays < 0;
+                                                    return (
                                                     <Box key={batch.id}>
                                                         <FormControlLabel
                                                             control={
@@ -364,15 +457,23 @@ export const SellMedicine: React.FC = () => {
                                                                     checked={!!selectedBatches[batch.id]}
                                                                     onChange={() => handleBatchToggle(batch)}
                                                                     size="small"
+                                                                    disabled={isExpired}
                                                                 />
                                                             }
                                                             label={
                                                                 <Box>
-                                                                    <Typography variant="body2">
-                                                                        Expiry: {format(new Date(batch.expDate), 'MMM dd, yyyy')}
+                                                                    <Typography 
+                                                                        variant="body2" 
+                                                                        color={getExpiryColor(remainingDays)}
+                                                                    >
+                                                                        {formatExpiryText(batch.expDate)}
                                                                     </Typography>
-                                                                    <Typography variant="body2" color="textSecondary">
+                                                                    <Typography 
+                                                                        variant="body2" 
+                                                                        color={isExpired ? 'error.main' : 'textSecondary'}
+                                                                    >
                                                                         Available: {batch.availableQuantity} | Price: ₹{batch.price}
+                                                                        {isExpired && ' (Expired)'}
                                                                     </Typography>
                                                                 </Box>
                                                             }
@@ -382,7 +483,7 @@ export const SellMedicine: React.FC = () => {
                                                                 <TextField
                                                                     type="number"
                                                                     label="Quantity"
-                                                                    value={selectedBatches[batch.id].quantity}
+                                                                    value={selectedBatches[batch.id].quantity || ''}
                                                                     onChange={(e) => handleQuantityChange(batch.id, Number(e.target.value))}
                                                                     error={!!formErrors.quantities?.[batch.id]}
                                                                     helperText={formErrors.quantities?.[batch.id]}
@@ -396,9 +497,15 @@ export const SellMedicine: React.FC = () => {
                                                             </Box>
                                                         )}
                                                     </Box>
-                                                ))}
+                                                    );
+                                                })}
                                             </Stack>
                                         </Paper>
+                                        ) : (
+                                        <Alert severity="warning" sx={{ mt: 1 }}>
+                                            No stock available for {selectedMedicine.name}
+                                        </Alert>
+                                        )
                                     )}
 
                                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

@@ -57,8 +57,8 @@ export const AddMedicine: React.FC = () => {
     });
     const [stock, setStock] = useState<Stock>({
         expDate: '',
-        quantity: 0,
-        price: 0
+        quantity: null as unknown as number,
+        price: null as unknown as number
     });
 
     const validateForm = (): boolean => {
@@ -67,16 +67,6 @@ export const AddMedicine: React.FC = () => {
 
         if (!medicine.name.trim()) {
             errors.name = 'Medicine name is required';
-            isValid = false;
-        }
-
-        if (!medicine.description.trim()) {
-            errors.description = 'Description is required';
-            isValid = false;
-        }
-
-        if (!medicine.manufacture.trim()) {
-            errors.manufacture = 'Manufacturer is required';
             isValid = false;
         }
 
@@ -116,7 +106,7 @@ export const AddMedicine: React.FC = () => {
         const { name, value } = e.target;
         setStock(prev => ({
             ...prev,
-            [name]: name === 'expDate' ? value : Number(value)
+            [name]: name === 'expDate' ? value : value === '' ? null : Number(value)
         }));
         if (formErrors[name as keyof FormErrors]) {
             setFormErrors(prev => ({ ...prev, [name]: undefined }));
@@ -133,16 +123,6 @@ export const AddMedicine: React.FC = () => {
             if (formErrors.expDate) {
                 setFormErrors(prev => ({ ...prev, expDate: undefined }));
             }
-        }
-    };
-
-    const handleFocusInput = (e: React.FocusEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        if (Number(value) === 0) {
-            setStock(prev => ({
-                ...prev,
-                [name]: ''
-            }));
         }
     };
 
@@ -380,7 +360,6 @@ export const AddMedicine: React.FC = () => {
                                 
                                 <TextField
                                     fullWidth
-                                    required
                                     name="description"
                                     label="Description"
                                     multiline
@@ -400,7 +379,6 @@ export const AddMedicine: React.FC = () => {
                                 
                                 <TextField
                                     fullWidth
-                                    required
                                     name="manufacture"
                                     label="Manufacturer"
                                     value={medicine.manufacture}
@@ -506,7 +484,6 @@ export const AddMedicine: React.FC = () => {
                                                 label="Quantity"
                                                 value={stock.quantity}
                                                 onChange={handleStockChange}
-                                                onFocus={handleFocusInput}
                                                 error={!!formErrors.quantity}
                                                 helperText={formErrors.quantity}
                                                 inputProps={{ min: "0" }}
@@ -527,7 +504,6 @@ export const AddMedicine: React.FC = () => {
                                                 label="Price"
                                                 value={stock.price}
                                                 onChange={handleStockChange}
-                                                onFocus={handleFocusInput}
                                                 error={!!formErrors.price}
                                                 helperText={formErrors.price}
                                                 inputProps={{ min: "0", step: "0.01" }}
