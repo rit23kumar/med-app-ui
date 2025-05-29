@@ -18,8 +18,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "types": ["node", "@mui/material"]
+    "jsx": "preserve",
+    "types": [
+      "node",
+      "@mui/material"
+    ]
   },
   "include": [
     "src"

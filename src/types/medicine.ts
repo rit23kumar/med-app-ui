@@ -17,6 +17,15 @@ export interface MedicineWithStock {
     stock: Stock;
 }
 
+export interface StockHistory {
+    id: number;
+    expDate: string;
+    quantity: number;
+    availableQuantity: number;
+    price: number;
+    createdAt: string;
+}
+
 export interface PageResponse<T> {
     content: T[];
     totalElements: number;

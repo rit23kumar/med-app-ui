@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { Medicine, MedicineWithStock, PageResponse, BatchMedicineResponse } from '../types/medicine';
-import { Sale, CreateSaleRequest } from '../types/sale';
+import { Medicine, MedicineWithStock, PageResponse, BatchMedicineResponse, StockHistory } from '../types/medicine';
+import { sell, CreateSellRequest } from '../types/sell';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -46,21 +46,28 @@ export const medicineApi = {
         });
         return response.data;
     },
+
+    getStockHistory: async (medicineId: number, includeFinished: boolean = false): Promise<StockHistory[]> => {
+        const response = await api.get(`/medicines/${medicineId}/stock-history`, {
+            params: { includeFinished }
+        });
+        return response.data;
+    }
 };
 
-export const saleApi = {
-    createSale: async (saleRequest: CreateSaleRequest): Promise<Sale> => {
-        const response = await api.post('/sales', saleRequest);
+export const sellApi = {
+    createsell: async (sellRequest: CreateSellRequest): Promise<sell> => {
+        const response = await api.post('/sells', sellRequest);
         return response.data;
     },
 
-    getSales: async (page: number = 0, size: number = 10): Promise<PageResponse<Sale>> => {
-        const response = await api.get(`/sales?page=${page}&size=${size}`);
+    getsells: async (page: number = 0, size: number = 10): Promise<PageResponse<sell>> => {
+        const response = await api.get(`/sells?page=${page}&size=${size}`);
         return response.data;
     },
 
-    getSaleById: async (id: number): Promise<Sale> => {
-        const response = await api.get(`/sales/${id}`);
+    getsellById: async (id: number): Promise<sell> => {
+        const response = await api.get(`/sells/${id}`);
         return response.data;
     }
 }; 

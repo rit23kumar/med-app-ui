@@ -1,6 +1,6 @@
 import { Medicine } from './medicine';
 
-export interface SaleItem {
+export interface sellItem {
     id?: number;
     medicine: Medicine;
     quantity: number;
@@ -8,15 +8,15 @@ export interface SaleItem {
     expDate: string;
 }
 
-export interface Sale {
+export interface sell {
     id?: number;
     date: string;
     customer?: string;
     totalAmount: number;
-    items: SaleItem[];
+    items: sellItem[];
 }
 
-export interface CreateSaleRequest {
+export interface CreateSellRequest {
     customer?: string;
     items: {
         medicineId: number;

@@ -27,6 +27,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import InventoryIcon from '@mui/icons-material/Inventory';
 import { useThemeContext } from '../theme/ThemeContext';
 
 interface LayoutProps {
@@ -43,7 +44,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const menuItems = [
     { text: 'Medicines', path: '/', icon: <DashboardIcon /> },
     { text: 'Add Medicine', path: '/add-medicine', icon: <AddCircleOutlineIcon /> },
-    { text: 'Sell Medicine', path: '/sell-medicine', icon: <ShoppingCartIcon /> }
+    { text: 'Sell Medicine', path: '/sell-medicine', icon: <ShoppingCartIcon /> },
+    { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon /> }
   ];
 
   const handleDrawerToggle = () => {

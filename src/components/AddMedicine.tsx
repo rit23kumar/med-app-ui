@@ -370,6 +370,7 @@ export const AddMedicine: React.FC = () => {
                                     error={!!formErrors.name}
                                     helperText={formErrors.name}
                                     size="small"
+                                    autoComplete="off"
                                     InputProps={{
                                         sx: {
                                             backgroundColor: 'transparent'
@@ -389,6 +390,7 @@ export const AddMedicine: React.FC = () => {
                                     error={!!formErrors.description}
                                     helperText={formErrors.description}
                                     size="small"
+                                    autoComplete="off"
                                     InputProps={{
                                         sx: {
                                             backgroundColor: 'transparent'
@@ -406,6 +408,7 @@ export const AddMedicine: React.FC = () => {
                                     error={!!formErrors.manufacture}
                                     helperText={formErrors.manufacture}
                                     size="small"
+                                    autoComplete="off"
                                     InputProps={{
                                         sx: {
                                             backgroundColor: 'transparent'
@@ -503,14 +506,15 @@ export const AddMedicine: React.FC = () => {
                                                 label="Quantity"
                                                 value={stock.quantity}
                                                 onChange={handleStockChange}
-                                            onFocus={handleFocusInput}
+                                                onFocus={handleFocusInput}
                                                 error={!!formErrors.quantity}
                                                 helperText={formErrors.quantity}
                                                 inputProps={{ min: "0" }}
-                                            size="small"
+                                                size="small"
+                                                autoComplete="off"
                                                 InputProps={{
                                                     sx: {
-                                                    backgroundColor: 'transparent'
+                                                        backgroundColor: 'transparent'
                                                     }
                                                 }}
                                             />
@@ -523,14 +527,15 @@ export const AddMedicine: React.FC = () => {
                                                 label="Price"
                                                 value={stock.price}
                                                 onChange={handleStockChange}
-                                            onFocus={handleFocusInput}
+                                                onFocus={handleFocusInput}
                                                 error={!!formErrors.price}
                                                 helperText={formErrors.price}
                                                 inputProps={{ min: "0", step: "0.01" }}
-                                            size="small"
+                                                size="small"
+                                                autoComplete="off"
                                                 InputProps={{
                                                     sx: {
-                                                    backgroundColor: 'transparent'
+                                                        backgroundColor: 'transparent'
                                                     }
                                                 }}
                                             />

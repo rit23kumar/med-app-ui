@@ -22,32 +22,40 @@ import {
     TableRow,
     Paper,
     Tooltip,
-    InputAdornment
+    InputAdornment,
+    Checkbox,
+    FormControlLabel,
+    Grid
 } from '@mui/material';
-import { Medicine } from '../types/medicine';
-import { CreateSaleRequest } from '../types/sale';
-import { medicineApi, saleApi } from '../services/api';
+import { Medicine, StockHistory } from '../types/medicine';
+import { CreateSellRequest } from '../types/sell';
+import { medicineApi, sellApi } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { format } from 'date-fns';
 
-interface SaleItem {
+interface sellItem {
     medicineId: number;
     medicineName: string;
     quantity: number;
     price: number;
     expDate: string;
+    batchId: number;
 }
 
 interface FormErrors {
     customer?: string;
     medicine?: string;
-    quantity?: string;
-    price?: string;
-    expDate?: string;
+    quantities?: { [key: number]: string };
+}
+
+interface SelectedBatchQuantity {
+    batch: StockHistory;
+    quantity: number;
 }
 
 export const SellMedicine: React.FC = () => {
@@ -55,27 +63,27 @@ export const SellMedicine: React.FC = () => {
     const theme = useTheme();
     const [medicines, setMedicines] = useState<Medicine[]>([]);
     const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
-    const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
+    const [sellItems, setsellItems] = useState<sellItem[]>([]);
     const [customer, setCustomer] = useState('');
-    const [quantity, setQuantity] = useState(1);
-    const [price, setPrice] = useState(0);
-    const [expDate, setExpDate] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [formErrors, setFormErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
-
-    const handleFocusInput = (field: 'quantity' | 'price') => {
-        if (field === 'quantity' && quantity === 0) {
-            setQuantity('' as any);
-        } else if (field === 'price' && price === 0) {
-            setPrice('' as any);
-        }
-    };
+    const [availableBatches, setAvailableBatches] = useState<StockHistory[]>([]);
+    const [selectedBatches, setSelectedBatches] = useState<{ [key: number]: SelectedBatchQuantity }>({});
 
     useEffect(() => {
         fetchMedicines();
     }, []);
+
+    useEffect(() => {
+        if (selectedMedicine?.id) {
+            loadAvailableBatches(selectedMedicine.id);
+        } else {
+            setAvailableBatches([]);
+            setSelectedBatches({});
+        }
+    }, [selectedMedicine]);
 
     const fetchMedicines = async () => {
         try {
@@ -87,8 +95,60 @@ export const SellMedicine: React.FC = () => {
         }
     };
 
+    const loadAvailableBatches = async (medicineId: number) => {
+        try {
+            const history = await medicineApi.getStockHistory(medicineId, false);
+            // Filter out batches with zero available quantity
+            const availableBatches = history.filter(batch => batch.availableQuantity > 0);
+            setAvailableBatches(availableBatches);
+        } catch (err) {
+            setError('Failed to fetch available batches');
+            console.error('Error fetching batches:', err);
+        }
+    };
+
+    const handleBatchToggle = (batch: StockHistory) => {
+        setSelectedBatches(prev => {
+            const newSelected = { ...prev };
+            if (newSelected[batch.id]) {
+                delete newSelected[batch.id];
+            } else {
+                newSelected[batch.id] = { batch, quantity: 0 };
+            }
+            return newSelected;
+        });
+        // Clear any errors for this batch
+        setFormErrors(prev => ({
+            ...prev,
+            quantities: {
+                ...prev.quantities,
+                [batch.id]: ''
+            }
+        }));
+    };
+
+    const handleQuantityChange = (batchId: number, value: number) => {
+        setSelectedBatches(prev => ({
+            ...prev,
+            [batchId]: {
+                ...prev[batchId],
+                quantity: value
+            }
+        }));
+        // Clear any errors for this batch
+        setFormErrors(prev => ({
+            ...prev,
+            quantities: {
+                ...prev.quantities,
+                [batchId]: ''
+            }
+        }));
+    };
+
     const validateItemForm = (): boolean => {
-        const errors: FormErrors = {};
+        const errors: FormErrors = {
+            quantities: {}
+        };
         let isValid = true;
 
         if (!selectedMedicine) {
@@ -96,20 +156,22 @@ export const SellMedicine: React.FC = () => {
             isValid = false;
         }
 
-        if (quantity <= 0) {
-            errors.quantity = 'Quantity must be greater than 0';
+        const selectedBatchIds = Object.keys(selectedBatches);
+        if (selectedBatchIds.length === 0) {
+            errors.medicine = 'Please select at least one batch';
             isValid = false;
         }
 
-        if (price <= 0) {
-            errors.price = 'Price must be greater than 0';
-            isValid = false;
-        }
-
-        if (!expDate) {
-            errors.expDate = 'Expiration date is required';
-            isValid = false;
-        }
+        selectedBatchIds.forEach(batchId => {
+            const { batch, quantity } = selectedBatches[Number(batchId)];
+            if (quantity <= 0) {
+                errors.quantities![batch.id] = 'Quantity must be greater than 0';
+                isValid = false;
+            } else if (quantity > batch.availableQuantity) {
+                errors.quantities![batch.id] = `Maximum available quantity is ${batch.availableQuantity}`;
+                isValid = false;
+            }
+        });
 
         setFormErrors(errors);
         return isValid;
@@ -118,35 +180,34 @@ export const SellMedicine: React.FC = () => {
     const handleAddItem = () => {
         if (!validateItemForm() || !selectedMedicine) return;
 
-        const newItem: SaleItem = {
+        const newItems: sellItem[] = Object.values(selectedBatches).map(({ batch, quantity }) => ({
             medicineId: selectedMedicine.id!,
             medicineName: selectedMedicine.name,
             quantity,
-            price,
-            expDate
-        };
+            price: batch.price,
+            expDate: batch.expDate,
+            batchId: batch.id
+        }));
 
-        setSaleItems([...saleItems, newItem]);
+        setsellItems([...sellItems, ...newItems]);
         
         // Reset form
         setSelectedMedicine(null);
-        setQuantity(1);
-        setPrice(0);
-        setExpDate('');
+        setSelectedBatches({});
         setFormErrors({});
     };
 
     const handleRemoveItem = (index: number) => {
-        setSaleItems(saleItems.filter((_, i) => i !== index));
+        setsellItems(sellItems.filter((_, i) => i !== index));
     };
 
     const calculateTotal = () => {
-        return saleItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+        return sellItems.reduce((total, item) => total + (item.price * item.quantity), 0);
     };
 
     const handleSubmit = async () => {
-        if (saleItems.length === 0) {
-            setError('Please add at least one item to the sale');
+        if (sellItems.length === 0) {
+            setError('Please add at least one item to the sell');
             return;
         }
 
@@ -154,9 +215,9 @@ export const SellMedicine: React.FC = () => {
         setError(null);
 
         try {
-            const saleRequest: CreateSaleRequest = {
+            const sellRequest: CreateSellRequest = {
                 customer: customer || undefined,
-                items: saleItems.map(item => ({
+                items: sellItems.map(item => ({
                     medicineId: item.medicineId,
                     quantity: item.quantity,
                     price: item.price,
@@ -164,14 +225,14 @@ export const SellMedicine: React.FC = () => {
                 }))
             };
 
-            await saleApi.createSale(saleRequest);
+            await sellApi.createsell(sellRequest);
             setShowSuccess(true);
             setTimeout(() => {
                 navigate('/');
             }, 2000);
         } catch (error) {
-            setError('Failed to create sale. Please try again.');
-            console.error('Error creating sale:', error);
+            setError('Failed to create sell. Please try again.');
+            console.error('Error creating sell:', error);
         } finally {
             setIsSubmitting(false);
         }
@@ -240,7 +301,7 @@ export const SellMedicine: React.FC = () => {
                         severity="success"
                         sx={{ mb: 2 }}
                     >
-                        Sale completed successfully! Redirecting to medicine list...
+                        sell completed successfully! Redirecting to medicine list...
                     </Alert>
                 </Collapse>
 
@@ -257,6 +318,7 @@ export const SellMedicine: React.FC = () => {
                                 value={customer}
                                 onChange={(e) => setCustomer(e.target.value)}
                                 size="small"
+                                autoComplete="off"
                                 InputProps={{
                                     sx: { backgroundColor: 'transparent' }
                                 }}
@@ -288,59 +350,63 @@ export const SellMedicine: React.FC = () => {
                                         )}
                                     />
 
-                                    <Stack direction="row" spacing={2}>
-                                        <TextField
-                                            fullWidth
-                                            type="number"
-                                            label="Quantity"
-                                            value={quantity}
-                                            onChange={(e) => setQuantity(Number(e.target.value))}
-                                            onFocus={() => handleFocusInput('quantity')}
-                                            error={!!formErrors.quantity}
-                                            helperText={formErrors.quantity}
-                                            size="small"
-                                            InputProps={{
-                                                sx: { backgroundColor: 'transparent' }
-                                            }}
-                                        />
-
-                                        <TextField
-                                            fullWidth
-                                            type="number"
-                                            label="Price"
-                                            value={price}
-                                            onChange={(e) => setPrice(Number(e.target.value))}
-                                            onFocus={() => handleFocusInput('price')}
-                                            error={!!formErrors.price}
-                                            helperText={formErrors.price}
-                                            size="small"
-                                            InputProps={{
-                                                startAdornment: <InputAdornment position="start">₹</InputAdornment>,
-                                                sx: { backgroundColor: 'transparent' }
-                                            }}
-                                        />
-
-                                        <TextField
-                                            fullWidth
-                                            type="date"
-                                            label="Expiration Date"
-                                            value={expDate}
-                                            onChange={(e) => setExpDate(e.target.value)}
-                                            error={!!formErrors.expDate}
-                                            helperText={formErrors.expDate}
-                                            InputLabelProps={{ shrink: true }}
-                                            size="small"
-                                            InputProps={{
-                                                sx: { backgroundColor: 'transparent' }
-                                            }}
-                                        />
-                                    </Stack>
+                                    {selectedMedicine && availableBatches.length > 0 && (
+                                        <Paper variant="outlined" sx={{ p: 2 }}>
+                                            <Typography variant="subtitle2" gutterBottom>
+                                                Available Batches
+                                            </Typography>
+                                            <Stack spacing={2}>
+                                                {availableBatches.map((batch) => (
+                                                    <Box key={batch.id}>
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={!!selectedBatches[batch.id]}
+                                                                    onChange={() => handleBatchToggle(batch)}
+                                                                    size="small"
+                                                                />
+                                                            }
+                                                            label={
+                                                                <Box>
+                                                                    <Typography variant="body2">
+                                                                        Expiry: {format(new Date(batch.expDate), 'MMM dd, yyyy')}
+                                                                    </Typography>
+                                                                    <Typography variant="body2" color="textSecondary">
+                                                                        Available: {batch.availableQuantity} | Price: ₹{batch.price}
+                                                                    </Typography>
+                                                                </Box>
+                                                            }
+                                                        />
+                                                        {selectedBatches[batch.id] && (
+                                                            <Box sx={{ ml: 4, mt: 1 }}>
+                                                                <TextField
+                                                                    type="number"
+                                                                    label="Quantity"
+                                                                    value={selectedBatches[batch.id].quantity}
+                                                                    onChange={(e) => handleQuantityChange(batch.id, Number(e.target.value))}
+                                                                    error={!!formErrors.quantities?.[batch.id]}
+                                                                    helperText={formErrors.quantities?.[batch.id]}
+                                                                    size="small"
+                                                                    autoComplete="off"
+                                                                    InputProps={{
+                                                                        inputProps: { min: 1, max: batch.availableQuantity },
+                                                                        sx: { backgroundColor: 'transparent' }
+                                                                    }}
+                                                                />
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                ))}
+                                            </Stack>
+                                        </Paper>
+                                    )}
 
                                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                                         <Button
                                             variant="contained"
                                             onClick={handleAddItem}
                                             startIcon={<AddIcon />}
+                                            disabled={!selectedMedicine || Object.keys(selectedBatches).length === 0}
                                             sx={{
                                                 px: 3,
                                                 py: 1,
@@ -357,7 +423,7 @@ export const SellMedicine: React.FC = () => {
                                 </Stack>
                             </Box>
 
-                            {saleItems.length > 0 && (
+                            {sellItems.length > 0 && (
                                 <TableContainer component={Paper} sx={{ mt: 2 }}>
                                     <Table size="small">
                                         <TableHead>
@@ -371,7 +437,7 @@ export const SellMedicine: React.FC = () => {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {saleItems.map((item, index) => (
+                                            {sellItems.map((item, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell>{item.medicineName}</TableCell>
                                                     <TableCell align="right">{item.quantity}</TableCell>
@@ -379,7 +445,9 @@ export const SellMedicine: React.FC = () => {
                                                     <TableCell align="right">
                                                         ₹{(item.quantity * item.price).toFixed(2)}
                                                     </TableCell>
-                                                    <TableCell align="right">{item.expDate}</TableCell>
+                                                    <TableCell align="right">
+                                                        {format(new Date(item.expDate), 'MMM dd, yyyy')}
+                                                    </TableCell>
                                                     <TableCell align="center">
                                                         <Tooltip title="Remove Item">
                                                             <IconButton
@@ -432,7 +500,7 @@ export const SellMedicine: React.FC = () => {
                                 <Button
                                     variant="contained"
                                     onClick={handleSubmit}
-                                    disabled={isSubmitting || saleItems.length === 0}
+                                    disabled={isSubmitting || sellItems.length === 0}
                                     startIcon={isSubmitting ? undefined : <ShoppingCartIcon />}
                                     sx={{
                                         minWidth: 100,
@@ -447,7 +515,7 @@ export const SellMedicine: React.FC = () => {
                                     {isSubmitting ? (
                                         <CircularProgress size={20} color="inherit" />
                                     ) : (
-                                        'Complete Sale'
+                                        'Complete sell'
                                     )}
                                 </Button>
                             </Box>
