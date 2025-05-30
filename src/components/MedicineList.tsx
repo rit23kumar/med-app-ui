@@ -24,7 +24,8 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     Stack,
-    Tooltip
+    Tooltip,
+    useMediaQuery
 } from '@mui/material';
 import { Medicine } from '../types/medicine';
 import { medicineApi } from '../services/api';
@@ -35,6 +36,138 @@ import SearchIcon from '@mui/icons-material/Search';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import debounce from 'lodash/debounce';
+import { FirstPage as FirstPageIcon, KeyboardArrowLeft, KeyboardArrowRight, LastPage as LastPageIcon } from '@mui/icons-material';
+
+interface PaginationActionsProps {
+    count: number;
+    page: number;
+    rowsPerPage: number;
+    onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => void;
+}
+
+const PaginationActions: React.FC<PaginationActionsProps> = ({
+    count,
+    page,
+    rowsPerPage,
+    onPageChange
+}) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const lastPage = Math.max(0, Math.ceil(count / rowsPerPage) - 1);
+    const [inputPage, setInputPage] = useState(page + 1);
+
+    useEffect(() => {
+        setInputPage(page + 1);
+    }, [page]);
+
+    const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseInt(e.target.value);
+        setInputPage(value);
+    };
+
+    const handlePageInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const targetPage = Math.min(Math.max(1, inputPage), lastPage + 1) - 1;
+            onPageChange(null, targetPage);
+        }
+    };
+
+    const handleBlur = () => {
+        setInputPage(page + 1);
+    };
+
+    return (
+        <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
+            justifyContent: 'center',
+            width: '100%'
+        }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <IconButton
+                    onClick={e => onPageChange(e, 0)}
+                    disabled={page === 0}
+                    aria-label="first page"
+                    size={isMobile ? "small" : "medium"}
+                >
+                    <FirstPageIcon />
+                </IconButton>
+                <IconButton
+                    onClick={e => onPageChange(e, page - 1)}
+                    disabled={page === 0}
+                    aria-label="previous page"
+                    size={isMobile ? "small" : "medium"}
+                >
+                    <KeyboardArrowLeft />
+                </IconButton>
+            </Box>
+            <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 0.5, 
+                minWidth: isMobile ? '110px' : '140px', 
+                whiteSpace: 'nowrap',
+                justifyContent: 'center'
+            }}>
+                <TextField
+                    value={inputPage}
+                    onChange={handlePageInput}
+                    onKeyPress={handlePageInputKeyPress}
+                    onBlur={handleBlur}
+                    type="number"
+                    size="small"
+                    sx={{
+                        width: isMobile ? '50px' : '60px',
+                        '& input': { 
+                            textAlign: 'center', 
+                            p: isMobile ? 0.25 : 0.5,
+                            '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                                '-webkit-appearance': 'none',
+                                margin: 0
+                            },
+                            '&[type=number]': {
+                                '-moz-appearance': 'textfield'
+                            }
+                        }
+                    }}
+                    inputProps={{
+                        min: 1,
+                        max: lastPage + 1,
+                        'aria-label': 'page number'
+                    }}
+                />
+                <Typography 
+                    variant={isMobile ? "caption" : "body2"} 
+                    color="text.secondary" 
+                    sx={{ flexShrink: 0 }}
+                >
+                    of {lastPage + 1}
+                </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <IconButton
+                    onClick={e => onPageChange(e, page + 1)}
+                    disabled={page >= lastPage}
+                    aria-label="next page"
+                    size={isMobile ? "small" : "medium"}
+                >
+                    <KeyboardArrowRight />
+                </IconButton>
+                <IconButton
+                    onClick={e => onPageChange(e, lastPage)}
+                    disabled={page >= lastPage}
+                    aria-label="last page"
+                    size={isMobile ? "small" : "medium"}
+                >
+                    <LastPageIcon />
+                </IconButton>
+            </Box>
+        </Box>
+    );
+};
 
 export const MedicineList: React.FC = () => {
     const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -47,6 +180,7 @@ export const MedicineList: React.FC = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const navigate = useNavigate();
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const fetchMedicines = async (search?: string) => {
         try {
@@ -110,14 +244,25 @@ export const MedicineList: React.FC = () => {
             <Box 
                 sx={{ 
                     py: 2,
-                    px: 3,
+                    px: isMobile ? 2 : 3,
                     borderBottom: 1,
                     borderColor: 'divider',
                     backgroundColor: alpha(theme.palette.primary.main, 0.02)
                 }}
             >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h5" component="h1" color="primary" sx={{ fontWeight: 500 }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? 2 : 0,
+                    justifyContent: 'space-between', 
+                    alignItems: isMobile ? 'stretch' : 'center' 
+                }}>
+                    <Typography 
+                        variant={isMobile ? "h6" : "h5"} 
+                        component="h1" 
+                        color="primary" 
+                        sx={{ fontWeight: 500 }}
+                    >
                         Medicine Inventory
                     </Typography>
                     <Button
@@ -125,6 +270,7 @@ export const MedicineList: React.FC = () => {
                         color="primary"
                         onClick={() => navigate('/add-medicine')}
                         startIcon={<AddIcon />}
+                        fullWidth={isMobile}
                         sx={{ 
                             px: 3,
                             py: 1,
@@ -141,10 +287,18 @@ export const MedicineList: React.FC = () => {
                 </Box>
             </Box>
             
-            <Stack direction="row" spacing={2} sx={{ px: 2, py: 2 }}>
+            <Stack 
+                direction={isMobile ? "column" : "row"} 
+                spacing={2} 
+                sx={{ 
+                    px: isMobile ? 2 : 2, 
+                    py: 2,
+                    width: '100%'
+                }}
+            >
                 <TextField
                     sx={{
-                        width: '60%',
+                        width: isMobile ? '100%' : '60%',
                         '& .MuiOutlinedInput-root': {
                             '& fieldset': {
                                 borderColor: alpha(theme.palette.text.primary, 0.1),
@@ -180,7 +334,8 @@ export const MedicineList: React.FC = () => {
                     exclusive
                     onChange={handleSearchTypeChange}
                     aria-label="search type"
-                    size="small"
+                    size={isMobile ? "small" : "medium"}
+                    fullWidth={isMobile}
                 >
                     <ToggleButton 
                         value="contains" 
@@ -188,6 +343,7 @@ export const MedicineList: React.FC = () => {
                         sx={{
                             px: 2,
                             whiteSpace: 'nowrap',
+                            flex: isMobile ? 1 : 'initial',
                             '&.Mui-selected': {
                                 backgroundColor: alpha(theme.palette.primary.main, 0.1),
                                 color: theme.palette.primary.main,
@@ -210,6 +366,7 @@ export const MedicineList: React.FC = () => {
                         sx={{
                             px: 2,
                             whiteSpace: 'nowrap',
+                            flex: isMobile ? 1 : 'initial',
                             '&.Mui-selected': {
                                 backgroundColor: alpha(theme.palette.primary.main, 0.1),
                                 color: theme.palette.primary.main,
@@ -230,72 +387,50 @@ export const MedicineList: React.FC = () => {
             </Stack>
             
             {error && (
-                <Alert severity="error" sx={{ mx: 2, mb: 2.5 }}>
+                <Alert severity="error" sx={{ mx: isMobile ? 2 : 2, mb: 2.5 }}>
                     {error}
                 </Alert>
             )}
-            <TableContainer>
-                <Table size="medium">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 600, py: 2 }}>ID</TableCell>
-                            <TableCell sx={{ fontWeight: 600, py: 2 }}>Name</TableCell>
-                            <TableCell sx={{ fontWeight: 600, py: 2 }}>Description</TableCell>
-                            <TableCell sx={{ fontWeight: 600, py: 2 }}>Manufacturer</TableCell>
-                            <TableCell sx={{ fontWeight: 600, py: 2 }}>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {loading ? (
-                            Array.from(new Array(5)).map((_, index) => (
-                                <TableRow key={index}>
-                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
-                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
-                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
-                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
-                                    <TableCell><Skeleton animation="wave" height={35} /></TableCell>
-                                </TableRow>
-                            ))
-                        ) : medicines.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                                    <Typography color="text.secondary">
-                                        {searchTerm ? 'No medicines found matching your search' : 'No medicines available'}
-                                    </Typography>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            medicines.map((medicine) => (
-                                <TableRow 
-                                    key={medicine.id}
-                                    sx={{ 
-                                        '&:hover': { 
-                                            backgroundColor: alpha(theme.palette.primary.main, 0.02)
-                                        },
-                                        transition: 'background-color 0.2s ease-in-out',
-                                        '& .MuiTableCell-root': {
-                                            py: 1.5
-                                        }
-                                    }}
-                                >
-                                    <TableCell>
-                                        <Chip 
-                                            label={medicine.id} 
-                                            size="small" 
-                                            sx={{ 
-                                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                                color: theme.palette.primary.main,
-                                                fontWeight: 500,
-                                                height: '28px'
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
-                                    <TableCell>{medicine.description}</TableCell>
-                                    <TableCell>{medicine.manufacture}</TableCell>
-                                    <TableCell>
+
+            {isMobile ? (
+                // Mobile view - Card layout
+                <Box sx={{ px: 2 }}>
+                    {loading ? (
+                        Array.from(new Array(3)).map((_, index) => (
+                            <Card key={index} sx={{ mb: 2 }}>
+                                <CardContent>
+                                    <Skeleton animation="wave" height={24} width="60%" sx={{ mb: 1 }} />
+                                    <Skeleton animation="wave" height={20} width="40%" />
+                                    <Skeleton animation="wave" height={20} width="30%" />
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : medicines.length === 0 ? (
+                        <Card sx={{ mb: 2 }}>
+                            <CardContent>
+                                <Typography color="text.secondary" align="center">
+                                    {searchTerm ? 'No medicines found matching your search' : 'No medicines available'}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        medicines.map((medicine) => (
+                            <Card key={medicine.id} sx={{ mb: 2 }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                        <Box>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                                                {medicine.name}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                {medicine.description || 'No description'}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Manufacturer: {medicine.manufacture || 'Not specified'}
+                                            </Typography>
+                                        </Box>
                                         <IconButton
-                                            size="medium"
+                                            size="small"
                                             color="primary"
                                             onClick={() => navigate(`/medicines/${medicine.id}`)}
                                             sx={{ 
@@ -306,28 +441,130 @@ export const MedicineList: React.FC = () => {
                                         >
                                             <VisibilityIcon />
                                         </IconButton>
+                                    </Box>
+                                    <Chip 
+                                        label={`ID: ${medicine.id}`} 
+                                        size="small" 
+                                        sx={{ 
+                                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                            color: theme.palette.primary.main,
+                                            fontWeight: 500
+                                        }}
+                                    />
+                                </CardContent>
+                            </Card>
+                        ))
+                    )}
+                </Box>
+            ) : (
+                // Desktop view - Table layout
+                <TableContainer>
+                    <Table size="medium">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 600, py: 2 }}>ID</TableCell>
+                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Name</TableCell>
+                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Description</TableCell>
+                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Manufacturer</TableCell>
+                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {loading ? (
+                                Array.from(new Array(5)).map((_, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                        <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                        <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                        <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                        <TableCell><Skeleton animation="wave" height={35} /></TableCell>
+                                    </TableRow>
+                                ))
+                            ) : medicines.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                                        <Typography color="text.secondary">
+                                            {searchTerm ? 'No medicines found matching your search' : 'No medicines available'}
+                                        </Typography>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-                <TablePagination
-                    component="div"
-                    count={totalElements}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    rowsPerPage={rowsPerPage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    sx={{
-                        borderTop: 1,
-                        borderColor: 'divider',
-                        '& .MuiTablePagination-toolbar': {
-                            minHeight: '52px'
-                        }
-                    }}
-                />
-            </TableContainer>
+                            ) : (
+                                medicines.map((medicine) => (
+                                    <TableRow 
+                                        key={medicine.id}
+                                        sx={{ 
+                                            '&:hover': { 
+                                                backgroundColor: alpha(theme.palette.primary.main, 0.02)
+                                            },
+                                            transition: 'background-color 0.2s ease-in-out',
+                                            '& .MuiTableCell-root': {
+                                                py: 1.5
+                                            }
+                                        }}
+                                    >
+                                        <TableCell>
+                                            <Chip 
+                                                label={medicine.id} 
+                                                size="small" 
+                                                sx={{ 
+                                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                                    color: theme.palette.primary.main,
+                                                    fontWeight: 500,
+                                                    height: '28px'
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
+                                        <TableCell>{medicine.description}</TableCell>
+                                        <TableCell>{medicine.manufacture}</TableCell>
+                                        <TableCell>
+                                            <IconButton
+                                                size="medium"
+                                                color="primary"
+                                                onClick={() => navigate(`/medicines/${medicine.id}`)}
+                                                sx={{ 
+                                                    '&:hover': {
+                                                        backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                                                    }
+                                                }}
+                                            >
+                                                <VisibilityIcon />
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
+
+            <TablePagination
+                component="div"
+                count={totalElements}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                sx={{
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    '& .MuiTablePagination-toolbar': {
+                        minHeight: '52px',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        justifyContent: isMobile ? 'center' : 'flex-end',
+                        px: isMobile ? 1 : 2
+                    },
+                    '& .MuiTablePagination-displayedRows': {
+                        margin: isMobile ? '8px 0' : 0
+                    },
+                    '& .MuiTablePagination-selectLabel': {
+                        margin: isMobile ? '8px 0' : 0
+                    }
+                }}
+                ActionsComponent={PaginationActions}
+            />
         </Box>
     );
 }; 

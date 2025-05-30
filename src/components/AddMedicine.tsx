@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -16,7 +16,8 @@ import {
     CardContent,
     Tooltip,
     Stack,
-    Divider
+    Divider,
+    Snackbar
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -29,6 +30,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import InfoIcon from '@mui/icons-material/Info';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { format, parse } from 'date-fns';
 
 interface FormErrors {
     name?: string;
@@ -49,6 +51,12 @@ export const AddMedicine: React.FC = () => {
     const [showSuccess, setShowSuccess] = useState(false);
     const [formErrors, setFormErrors] = useState<FormErrors>({});
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [toasts, setToasts] = useState<Array<{
+        id: number;
+        message: string;
+        severity: 'success' | 'error' | 'info' | 'warning';
+    }>>([]);
+    let toastId = 0;
 
     const [medicine, setMedicine] = useState<Medicine>({
         name: '',
@@ -140,13 +148,15 @@ export const AddMedicine: React.FC = () => {
                     stock
                 };
                 await medicineApi.addMedicineWithStock(medicineWithStock);
+                setShowSuccess(true);
+                setMedicine({ name: '', description: '', manufacture: '' });
+                setStock({ expDate: '', quantity: null as unknown as number, price: null as unknown as number });
+                setIncludeStock(false);
             } else {
                 await medicineApi.addMedicine(medicine);
+                setShowSuccess(true);
+                setMedicine({ name: '', description: '', manufacture: '' });
             }
-            setShowSuccess(true);
-            setTimeout(() => {
-                navigate('/');
-            }, 2000);
         } catch (err: any) {
             const errorMessage = err.response?.data?.message || 'Failed to add medicine. Please try again.';
             setError(errorMessage);
@@ -156,17 +166,47 @@ export const AddMedicine: React.FC = () => {
         }
     };
 
+    const showToast = (message: string, severity: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+        const id = toastId++;
+        setToasts(prev => [...prev, { id, message, severity }]);
+        // Auto remove after 6 seconds
+        setTimeout(() => {
+            setToasts(prev => prev.filter(toast => toast.id !== id));
+        }, 6000);
+    };
+
+    const handleToastClose = (id: number) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
+
+    const convertToISODate = (dateStr: string): string => {
+        try {
+            // Try parsing as DD-MM-YYYY
+            const parsedDate = parse(dateStr, 'dd-MM-yyyy', new Date());
+            return format(parsedDate, 'yyyy-MM-dd');
+        } catch (error) {
+            try {
+                // If DD-MM-YYYY fails, try parsing as YYYY-MM-DD
+                const parsedDate = parse(dateStr, 'yyyy-MM-dd', new Date());
+                return format(parsedDate, 'yyyy-MM-dd');
+            } catch (error) {
+                throw new Error(`Invalid date format. Please use DD-MM-YYYY format (e.g., 31-12-2025)`);
+            }
+        }
+    };
+
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        // Reset any previous errors
+        // Reset any previous errors and success state
         setUploadError(null);
         setError(null);
+        setShowSuccess(false);
 
         // Check if it's a CSV file
         if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-            setUploadError('Please upload a valid CSV file');
+            showToast('Please upload a valid CSV file', 'error');
             return;
         }
 
@@ -176,64 +216,189 @@ export const AddMedicine: React.FC = () => {
                 const text = e.target?.result as string;
                 const lines = text.split('\n');
                 
-                // Skip header row and filter out empty lines
-                const medicines = lines
-                    .slice(1)
-                    .filter(line => line.trim())
-                    .map(line => {
-                        const [name, description, manufacture] = line.split(',').map(field => field.trim());
-                        return { name, description, manufacture };
-                    })
-                    .filter(medicine => medicine.name && medicine.description && medicine.manufacture); // Ensure all fields are present
-
-                if (medicines.length === 0) {
-                    setUploadError('No valid data found in CSV. Please ensure the file follows the template format.');
-                    return;
-                }
-
                 try {
-                    setIsSubmitting(true);
-                    const response = await medicineApi.addMedicines(medicines);
-                    
-                    if (response.totalFailed > 0) {
-                        // Create a formatted message for partial success/failure
-                        const successMessage = response.totalSuccess > 0 
-                            ? `Successfully added ${response.totalSuccess} medicine${response.totalSuccess > 1 ? 's' : ''}.`
-                            : '';
-                        
-                        const failureDetails = response.failedMedicines
-                            .map(f => `• ${f.name}: ${f.reason}`)
-                            .join('\n');
+                    // Skip header row and filter out empty lines
+                    const medicinesWithStock = lines
+                        .slice(1)
+                        .filter(line => line.trim())
+                        .map(line => {
+                            const [name, description, manufacture, expDate, quantity, price] = line.split(',').map(field => field.trim());
+                            
+                            // Basic medicine data
+                            const medicine = { name, description, manufacture };
+                            
+                            // Check if stock information is complete
+                            const hasCompleteStockInfo = expDate && quantity && price;
+                            
+                            // If all stock fields are present, include stock information
+                            if (hasCompleteStockInfo) {
+                                try {
+                                    // Convert and validate the date
+                                    const isoDate = convertToISODate(expDate);
+                                    
+                                    // Validate date is not in the past
+                                    const expDateObj = new Date(isoDate);
+                                    if (expDateObj < new Date()) {
+                                        throw new Error(`Expiration date for medicine "${name}" cannot be in the past`);
+                                    }
 
-                        const message = `${successMessage}\n\n${response.totalFailed} medicine${response.totalFailed > 1 ? 's' : ''} failed to add:\n${failureDetails}`;
-                        
-                        if (response.totalSuccess > 0) {
-                            // Show success for partial success
-                            setShowSuccess(true);
-                            // But also show the failure details
-                            setError(message);
-                            // Navigate after a delay only if there were some successes
-                            setTimeout(() => {
-                                navigate('/');
-                            }, 3000);
-                        } else {
-                            // If nothing succeeded, just show the error
-                            setError(message);
-                        }
-                    } else {
-                        // Complete success
-                        setShowSuccess(true);
-                        setTimeout(() => {
-                            navigate('/');
-                        }, 2000);
+                                    // Validate quantity and price
+                                    const quantityNum = parseInt(quantity);
+                                    const priceNum = parseFloat(price);
+
+                                    if (isNaN(quantityNum) || quantityNum <= 0) {
+                                        throw new Error(`Invalid quantity for medicine "${name}". Must be a positive number`);
+                                    }
+
+                                    if (isNaN(priceNum) || priceNum <= 0) {
+                                        throw new Error(`Invalid price for medicine "${name}". Must be a positive number`);
+                                    }
+
+                                    return {
+                                        medicine,
+                                        stock: {
+                                            expDate: isoDate,
+                                            quantity: quantityNum,
+                                            price: priceNum
+                                        }
+                                    };
+                                } catch (error: any) {
+                                    showToast(error.message, 'error');
+                                    throw error;
+                                }
+                            }
+                            
+                            return { medicine };
+                        })
+                        .filter(item => {
+                            if (!item.medicine.name || !item.medicine.description || !item.medicine.manufacture) {
+                                showToast(`Missing required fields for medicine "${item.medicine.name || 'Unknown'}". Name, description, and manufacturer are required.`, 'error');
+                                return false;
+                            }
+                            return true;
+                        });
+
+                    if (medicinesWithStock.length === 0) {
+                        showToast('No valid data found in CSV. Please ensure the file follows the template format.', 'error');
+                        return;
                     }
+
+                    setIsSubmitting(true);
+                    
+                    // Process each medicine
+                    const results = await Promise.all(
+                        medicinesWithStock.map(async (item) => {
+                            try {
+                                if ('stock' in item && item.stock) {
+                                    try {
+                                        // First try to add medicine with stock
+                                        const medicineWithStock: MedicineWithStock = {
+                                            medicine: item.medicine,
+                                            stock: item.stock
+                                        };
+                                        const response = await medicineApi.addMedicineWithStock(medicineWithStock);
+                                        return { 
+                                            success: true, 
+                                            name: item.medicine.name,
+                                            isNewMedicine: true,
+                                            hasStock: true 
+                                        };
+                                    } catch (err: any) {
+                                        // If error is "medicine already exists", try to add stock only
+                                        if (err.response?.data?.message?.includes('already exists')) {
+                                            try {
+                                                // Search for the existing medicine
+                                                const searchResult = await medicineApi.searchMedicines(item.medicine.name, 'contains');
+                                                const existingMedicine = searchResult.find(m => 
+                                                    m.name.toLowerCase() === item.medicine.name.toLowerCase()
+                                                );
+
+                                                if (existingMedicine) {
+                                                    // Add stock to existing medicine
+                                                    const medicineWithStock: MedicineWithStock = {
+                                                        medicine: existingMedicine,
+                                                        stock: item.stock
+                                                    };
+                                                    await medicineApi.addMedicineWithStock(medicineWithStock);
+                                                    return {
+                                                        success: true,
+                                                        name: item.medicine.name,
+                                                        isNewMedicine: false,
+                                                        hasStock: true,
+                                                        stockUpdated: true
+                                                    };
+                                                }
+                                            } catch (stockErr: any) {
+                                                return {
+                                                    success: false,
+                                                    name: item.medicine.name,
+                                                    reason: `Failed to update stock: ${stockErr.response?.data?.message || stockErr.message}`
+                                                };
+                                            }
+                                        }
+                                        return {
+                                            success: false,
+                                            name: item.medicine.name,
+                                            reason: err.response?.data?.message || err.message
+                                        };
+                                    }
+                                } else {
+                                    // Add medicine only
+                                    const response = await medicineApi.addMedicine(item.medicine);
+                                    return { 
+                                        success: true, 
+                                        name: item.medicine.name,
+                                        isNewMedicine: true,
+                                        hasStock: false 
+                                    };
+                                }
+                            } catch (err: any) {
+                                return {
+                                    success: false,
+                                    name: item.medicine.name,
+                                    reason: err.response?.data?.message || 'Failed to add medicine'
+                                };
+                            }
+                        })
+                    );
+
+                    // Process results
+                    const successfulUploads = results.filter(r => r.success);
+                    const failedUploads = results.filter(r => !r.success);
+
+                    // Count different types of successful operations
+                    const newMedicinesWithStock = successfulUploads.filter(r => r.isNewMedicine && r.hasStock).length;
+                    const newMedicinesWithoutStock = successfulUploads.filter(r => r.isNewMedicine && !r.hasStock).length;
+                    const stockUpdates = successfulUploads.filter(r => !r.isNewMedicine && (r.hasStock || r.stockUpdated)).length;
+
+                    // Show results in order: success first, then failures
+                    if (successfulUploads.length > 0) {
+                        let successMessage = '';
+                        if (newMedicinesWithStock > 0) {
+                            successMessage += `${newMedicinesWithStock} new medicine${newMedicinesWithStock > 1 ? 's' : ''} added with stock. `;
+                        }
+                        if (newMedicinesWithoutStock > 0) {
+                            successMessage += `${newMedicinesWithoutStock} new medicine${newMedicinesWithoutStock > 1 ? 's' : ''} added without stock. `;
+                        }
+                        if (stockUpdates > 0) {
+                            successMessage += `Stock updated for ${stockUpdates} existing medicine${stockUpdates > 1 ? 's' : ''}.`;
+                        }
+                        if (successMessage.trim()) {
+                            showToast(successMessage.trim(), 'success');
+                        }
+                    }
+
+                    if (failedUploads.length > 0) {
+                        const failureMessage = failedUploads
+                            .map(f => `${f.name}: ${f.reason}`)
+                            .join('\n');
+                        showToast(`Failed uploads:\n${failureMessage}`, 'error');
+                    }
+
                 } catch (err: any) {
-                    const errorMessage = err.response?.data?.message || 'Failed to upload medicines. Please try again.';
-                    setError(errorMessage);
-                    console.error('Error uploading medicines:', err);
+                    showToast(err.message || 'Error processing CSV file', 'error');
                 } finally {
                     setIsSubmitting(false);
-                    // Reset file input
                     if (fileInputRef.current) {
                         fileInputRef.current.value = '';
                     }
@@ -242,13 +407,15 @@ export const AddMedicine: React.FC = () => {
 
             reader.readAsText(file);
         } catch (err) {
-            setUploadError('Error reading CSV file. Please ensure the file is properly formatted.');
-            console.error('Error reading file:', err);
+            showToast('Error reading CSV file. Please ensure the file is properly formatted.', 'error');
         }
     };
 
     const downloadSampleCsv = () => {
-        const csvContent = 'Name,Description,Manufacture\nParacetamol,Pain relief medicine,ABC Pharma\nVitamin C,Immunity booster supplement,XYZ Healthcare';
+        const csvContent = 'Name,Description,Manufacture,ExpirationDate,Quantity,Price\n' +
+            'Paracetamol,Pain relief medicine,ABC Pharma,31-12-2025,100,5.99\n' +
+            'Vitamin C,Immunity booster supplement,XYZ Healthcare,15-10-2024,50,12.50\n' +
+            'Aspirin,Pain and fever reducer,MNO Pharmaceuticals,,,' // Example without stock info
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -321,9 +488,19 @@ export const AddMedicine: React.FC = () => {
                 <Collapse in={showSuccess}>
                     <Alert 
                         severity="success"
+                        action={
+                            <IconButton
+                                aria-label="close"
+                                color="inherit"
+                                size="small"
+                                onClick={() => setShowSuccess(false)}
+                            >
+                                <CloseIcon fontSize="inherit" />
+                            </IconButton>
+                        }
                         sx={{ mb: 2 }}
                     >
-                        Medicine added successfully! Redirecting to medicine list...
+                        {error ? 'Partially successful!' : 'Medicine added successfully!'}
                     </Alert>
                 </Collapse>
 
@@ -633,6 +810,40 @@ export const AddMedicine: React.FC = () => {
                         )}
                     </CardContent>
                 </Card>
+            </Box>
+
+            <Box
+                sx={{
+                    position: 'fixed',
+                    top: theme.spacing(2),
+                    right: theme.spacing(2),
+                    zIndex: theme.zIndex.snackbar,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1
+                }}
+            >
+                {toasts.map((toast) => (
+                    <Snackbar
+                        key={toast.id}
+                        open={true}
+                        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        sx={{ position: 'relative', mt: 0 }}
+                    >
+                        <Alert
+                            onClose={() => handleToastClose(toast.id)}
+                            severity={toast.severity}
+                            sx={{
+                                width: '100%',
+                                whiteSpace: 'pre-wrap',
+                                boxShadow: theme.shadows[3]
+                            }}
+                            variant="filled"
+                        >
+                            {toast.message}
+                        </Alert>
+                    </Snackbar>
+                ))}
             </Box>
         </Box>
     );
