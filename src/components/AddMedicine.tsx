@@ -413,8 +413,8 @@ export const AddMedicine: React.FC = () => {
 
     const downloadSampleCsv = () => {
         const csvContent = 'Name,Description,Manufacture,ExpirationDate,Quantity,Price\n' +
-            'Paracetamol,Pain relief medicine,ABC Pharma,31-12-2025,100,5.99\n' +
-            'Vitamin C,Immunity booster supplement,XYZ Healthcare,15-10-2024,50,12.50\n' +
+            'Paracetamol,Pain relief medicine,ABC Pharma,31-12-2029,100,5.99\n' +
+            'Vitamin C,Immunity booster supplement,XYZ Healthcare,15-10-2029,50,12.50\n' +
             'Aspirin,Pain and fever reducer,MNO Pharmaceuticals,,,' // Example without stock info
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
