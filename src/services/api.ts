@@ -2,7 +2,9 @@ import axios from 'axios';
 import { Medicine, MedicineWithStock, PageResponse, BatchMedicineResponse, StockHistory } from '../types/medicine';
 import { sell, CreateSellRequest } from '../types/sell';
 
-const API_BASE_URL = '/api';
+// const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost:8080/api';
+
 
 const api = axios.create({
     baseURL: API_BASE_URL,

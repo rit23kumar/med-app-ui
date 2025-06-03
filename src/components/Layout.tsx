@@ -28,6 +28,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import HistoryIcon from '@mui/icons-material/History';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import { useThemeContext } from '../theme/ThemeContext';
 
 interface LayoutProps {
@@ -45,7 +47,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Medicines', path: '/', icon: <DashboardIcon /> },
     { text: 'Add Medicine', path: '/add-medicine', icon: <AddCircleOutlineIcon /> },
     { text: 'Sell Medicine', path: '/sell-medicine', icon: <ShoppingCartIcon /> },
-    { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon /> }
+    { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon /> },
+    { text: 'Sales History', path: '/sales-history', icon: <ReceiptIcon /> },
+    { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon /> }
   ];
 
   const handleDrawerToggle = () => {
@@ -58,7 +62,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const drawer = (
-    <Box sx={{ width: 250 }}>
+    <Box sx={{ width: 280 }}>
       <Box
         sx={{
           p: 2,
@@ -176,7 +180,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         sx={{
           '& .MuiDrawer-paper': { 
             boxSizing: 'border-box',
-            width: 250,
+            width: 280,
             backgroundColor: theme.palette.background.paper,
             borderRight: 1,
             borderColor: 'divider'
