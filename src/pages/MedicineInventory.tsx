@@ -18,7 +18,6 @@ import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Medicine, PageResponse, StockHistory } from '../types/medicine';
 import { medicineApi } from '../services/api';
-import AddMedicineDialog from '../components/AddMedicineDialog';
 import StockHistoryDialog from '../components/StockHistoryDialog';
 
 const MedicineInventory: React.FC = () => {
@@ -108,9 +107,9 @@ const MedicineInventory: React.FC = () => {
                     <TableHead>
                         <TableRow>
                             <TableCell>Name</TableCell>
-                            <TableCell>Description</TableCell>
-                            <TableCell>Manufacturer</TableCell>
-                            <TableCell>Current Stock</TableCell>
+                            <TableCell>Available Quantity</TableCell>
+                            <TableCell>Price</TableCell>
+                            <TableCell>Expiry Date</TableCell>
                             <TableCell>Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -125,19 +124,9 @@ const MedicineInventory: React.FC = () => {
                             medicines.map((medicine) => (
                                 <TableRow key={medicine.id}>
                                     <TableCell>{medicine.name}</TableCell>
-                                    <TableCell>{medicine.description}</TableCell>
-                                    <TableCell>{medicine.manufacture}</TableCell>
-                                    <TableCell>
-                                        {medicine.stock ? (
-                                            <>
-                                                Qty: {medicine.stock.quantity}
-                                                <br />
-                                                Price: ${medicine.stock.price}
-                                            </>
-                                        ) : (
-                                            'No stock'
-                                        )}
-                                    </TableCell>
+                                    <TableCell>{medicine.stock?.quantity || 0}</TableCell>
+                                    <TableCell>₹{medicine.stock?.price || 0}</TableCell>
+                                    <TableCell>{medicine.stock?.expDate || 'N/A'}</TableCell>
                                     <TableCell>
                                         <IconButton
                                             color="primary"
@@ -160,11 +149,6 @@ const MedicineInventory: React.FC = () => {
                 onPageChange={handleChangePage}
                 rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-
-            <AddMedicineDialog
-                open={openAddDialog}
-                onClose={handleCloseAddDialog}
             />
 
             {selectedMedicine && (

@@ -44,9 +44,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const menuItems = [
-    { text: 'Medicines', path: '/', icon: <DashboardIcon /> },
-    { text: 'Add Medicine', path: '/add-medicine', icon: <AddCircleOutlineIcon /> },
-    { text: 'Sell Medicine', path: '/sell-medicine', icon: <ShoppingCartIcon /> },
+    { text: 'Sell Medicine', path: '/', icon: <ShoppingCartIcon /> },
+    { text: 'Medicine Inventory', path: '/medicine-inventory', icon: <DashboardIcon /> },
     { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon /> },
     { text: 'Sales History', path: '/sales-history', icon: <ReceiptIcon /> },
     { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon /> }
@@ -62,7 +61,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const drawer = (
-    <Box sx={{ width: 280 }}>
+    <Box sx={{ width: 240 }}>
       <Box
         sx={{
           p: 2,
@@ -180,7 +179,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         sx={{
           '& .MuiDrawer-paper': { 
             boxSizing: 'border-box',
-            width: 280,
+            width: 250,
             backgroundColor: theme.palette.background.paper,
             borderRight: 1,
             borderColor: 'divider'

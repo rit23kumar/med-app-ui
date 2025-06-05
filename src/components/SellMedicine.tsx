@@ -25,7 +25,8 @@ import {
     InputAdornment,
     Checkbox,
     FormControlLabel,
-    Grid
+    Grid,
+    Snackbar
 } from '@mui/material';
 import { Medicine, StockHistory } from '../types/medicine';
 import { CreateSellRequest } from '../types/sell';
@@ -328,308 +329,223 @@ export const SellMedicine: React.FC = () => {
     };
 
     return (
-        <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh' }}>
-            <Box 
-                sx={{ 
-                    py: 2,
-                    px: 3,
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    backgroundColor: alpha(theme.palette.primary.main, 0.02)
-                }}
-            >
-                <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 2 
-                }}>
-                    <IconButton 
-                        onClick={() => navigate('/')}
-                        size="small"
-                        sx={{ 
-                            backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                            '&:hover': {
-                                backgroundColor: alpha(theme.palette.primary.main, 0.08)
-                            }
-                        }}
-                    >
-                        <ArrowBackIcon />
-                    </IconButton>
-                    <Typography variant="h5" component="h1" color="primary" sx={{ fontWeight: 500 }}>
-                        Sell Medicine
-                    </Typography>
-                </Box>
-            </Box>
+        <Box sx={{ p: 3 }}>
+            <Typography variant="h4" gutterBottom>
+                Sell Medicine
+            </Typography>
 
-            <Box sx={{
-                maxWidth: 1000, 
-                mx: 'auto',
-                p: 3,
-            }}>
-                <Collapse in={!!error}>
-                    <Alert 
-                        severity="error"
-                        action={
-                            <IconButton
-                                aria-label="close"
-                                color="inherit"
-                                size="small"
-                                onClick={() => setError(null)}
-                            >
-                                <CloseIcon fontSize="inherit" />
-                            </IconButton>
-                        }
-                        sx={{ mb: 2 }}
-                    >
-                        {error}
-                    </Alert>
-                </Collapse>
+            {/* Add Item Section */}
+            <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h5" gutterBottom>
+                    Add Items to Cart
+                </Typography>
+                <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                        <Autocomplete
+                            options={medicines}
+                            getOptionLabel={(option) => option.name}
+                            value={selectedMedicine}
+                            onChange={(_, newValue) => setSelectedMedicine(newValue)}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Select Medicine"
+                                    required
+                                    fullWidth
+                                    error={!!formErrors.medicine}
+                                    helperText={formErrors.medicine}
+                                    autoComplete="off"
+                                />
+                            )}
+                        />
+                    </Grid>
 
-                <Collapse in={showSuccess}>
-                    <Alert 
-                        severity="success"
-                        sx={{ mb: 2 }}
-                    >
-                        sell completed successfully! Redirecting to medicine list...
-                    </Alert>
-                </Collapse>
-
-                <Card sx={{
-                    backgroundColor: theme.palette.background.paper,
-                    boxShadow: theme.shadows[1],
-                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                }}>
-                    <CardContent sx={{ p: 3 }}>
-                        <Stack spacing={2.5}>
-                            <TextField
-                                fullWidth
-                                label="Customer Name (Optional)"
-                                value={customer}
-                                onChange={(e) => setCustomer(e.target.value)}
-                                size="small"
-                                autoComplete="off"
-                                InputProps={{
-                                    sx: { backgroundColor: 'transparent' }
-                                }}
-                            />
-
-                            <Box sx={{ 
-                                p: 2, 
-                                backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                                borderRadius: 1
-                            }}>
-                                <Typography variant="subtitle1" color="primary" fontWeight="500" sx={{ mb: 2 }}>
-                                    Add Items
+                    {selectedMedicine && availableBatches.length > 0 && (
+                        <Grid item xs={12}>
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Typography variant="subtitle1" gutterBottom>
+                                    Available Batches
                                 </Typography>
-                                
-                                <Stack spacing={2}>
-                                    <Autocomplete
-                                        options={medicines}
-                                        getOptionLabel={(option) => option.name}
-                                        value={selectedMedicine}
-                                        onChange={(_, newValue) => setSelectedMedicine(newValue)}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="Select Medicine"
-                                                error={!!formErrors.medicine}
-                                                helperText={formErrors.medicine}
-                                                size="small"
-                                            />
-                                        )}
-                                    />
-
-                                    {selectedMedicine && (
-                                        availableBatches.length > 0 ? (
-                                        <Paper variant="outlined" sx={{ p: 2 }}>
-                                            <Typography variant="subtitle2" gutterBottom>
-                                                Available Batches (Total Available - {availableBatches.reduce((sum, batch) => sum + batch.availableQuantity, 0)})
-                                            </Typography>
-                                            <Stack spacing={2}>
-                                                {availableBatches.map((batch) => {
-                                                    const remainingDays = getRemainingDays(batch.expDate);
-                                                    const isExpired = remainingDays < 0;
-                                                    return (
-                                                    <Box key={batch.id}>
-                                                        <FormControlLabel
-                                                            control={
-                                                                <Checkbox
-                                                                    checked={!!selectedBatches[batch.id]}
-                                                                    onChange={() => handleBatchToggle(batch)}
-                                                                    size="small"
-                                                                    disabled={isExpired}
-                                                                />
-                                                            }
-                                                            label={
-                                                                <Box>
-                                                                    <Typography 
-                                                                        variant="body2" 
-                                                                        color={getExpiryColor(remainingDays)}
-                                                                    >
-                                                                        {formatExpiryText(batch.expDate)}
-                                                                    </Typography>
-                                                                    <Typography 
-                                                                        variant="body2" 
-                                                                        color={isExpired ? 'error.main' : 'textSecondary'}
-                                                                    >
-                                                                        Available: {batch.availableQuantity} | Price: ₹{batch.price}
-                                                                        {isExpired && ' (Expired)'}
-                                                                    </Typography>
-                                                                </Box>
-                                                            }
-                                                        />
-                                                        {selectedBatches[batch.id] && (
-                                                            <Box sx={{ ml: 4, mt: 1 }}>
-                                                                <TextField
-                                                                    type="number"
-                                                                    label="Quantity"
-                                                                    value={selectedBatches[batch.id].quantity || ''}
-                                                                    onChange={(e) => handleQuantityChange(batch.id, Number(e.target.value))}
-                                                                    error={!!formErrors.quantities?.[batch.id]}
-                                                                    helperText={formErrors.quantities?.[batch.id]}
-                                                                    size="small"
-                                                                    autoComplete="off"
-                                                                    InputProps={{
-                                                                        inputProps: { min: 1, max: batch.availableQuantity },
-                                                                        sx: { backgroundColor: 'transparent' }
-                                                                    }}
-                                                                />
-                                                            </Box>
-                                                        )}
-                                                    </Box>
-                                                    );
-                                                })}
-                                            </Stack>
-                                        </Paper>
-                                        ) : (
-                                        <Alert severity="warning" sx={{ mt: 1 }}>
-                                            No stock available for {selectedMedicine.name}
-                                        </Alert>
-                                        )
-                                    )}
-
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                        <Button
-                                            variant="contained"
-                                            onClick={handleAddItem}
-                                            startIcon={<AddIcon />}
-                                            disabled={!selectedMedicine || Object.keys(selectedBatches).length === 0}
-                                            sx={{
-                                                px: 3,
-                                                py: 1,
-                                                '&:hover': {
-                                                    transform: 'translateY(-1px)',
-                                                    boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
-                                                },
-                                                transition: 'all 0.2s ease-in-out'
-                                            }}
-                                        >
-                                            Add Item
-                                        </Button>
-                                    </Box>
-                                </Stack>
-                            </Box>
-
-                            {sellItems.length > 0 && (
-                                <TableContainer component={Paper} sx={{ mt: 2 }}>
+                                <TableContainer>
                                     <Table size="small">
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell>Medicine</TableCell>
-                                                <TableCell align="right">Quantity</TableCell>
-                                                <TableCell align="right">Price</TableCell>
-                                                <TableCell align="right">Total</TableCell>
-                                                <TableCell align="right">Exp. Date</TableCell>
-                                                <TableCell align="center">Actions</TableCell>
+                                                <TableCell padding="checkbox">Select</TableCell>
+                                                <TableCell>Expiry Date</TableCell>
+                                                <TableCell>Available</TableCell>
+                                                <TableCell>Price</TableCell>
+                                                <TableCell>Quantity</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {sellItems.map((item, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell>{item.medicineName}</TableCell>
-                                                    <TableCell align="right">{item.quantity}</TableCell>
-                                                    <TableCell align="right">₹{item.price}</TableCell>
-                                                    <TableCell align="right">
-                                                        ₹{(item.quantity * item.price).toFixed(2)}
+                                            {availableBatches.map((batch) => (
+                                                <TableRow key={batch.id}>
+                                                    <TableCell padding="checkbox">
+                                                        <Checkbox
+                                                            checked={!!selectedBatches[batch.id]}
+                                                            onChange={() => handleBatchToggle(batch)}
+                                                        />
                                                     </TableCell>
-                                                    <TableCell align="right">
-                                                        {format(new Date(item.expDate), 'MMM dd, yyyy')}
+                                                    <TableCell>
+                                                        <Typography
+                                                            sx={{
+                                                                color: getExpiryColor(getRemainingDays(batch.expDate))
+                                                            }}
+                                                        >
+                                                            {formatExpiryText(batch.expDate)}
+                                                        </Typography>
                                                     </TableCell>
-                                                    <TableCell align="center">
-                                                        <Tooltip title="Remove Item">
-                                                            <IconButton
+                                                    <TableCell>{batch.availableQuantity}</TableCell>
+                                                    <TableCell>₹{batch.price}</TableCell>
+                                                    <TableCell>
+                                                        {selectedBatches[batch.id] && (
+                                                            <TextField
+                                                                type="number"
                                                                 size="small"
-                                                                color="error"
-                                                                onClick={() => handleRemoveItem(index)}
-                                                            >
-                                                                <DeleteIcon />
-                                                            </IconButton>
-                                                        </Tooltip>
+                                                                value={selectedBatches[batch.id].quantity || ''}
+                                                                onChange={(e) => handleQuantityChange(batch.id, parseInt(e.target.value) || 0)}
+                                                                error={!!formErrors.quantities?.[batch.id]}
+                                                                helperText={formErrors.quantities?.[batch.id]}
+                                                                inputProps={{ min: 1, max: batch.availableQuantity }}
+                                                                sx={{ width: 100 }}
+                                                            />
+                                                        )}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
-                                            <TableRow>
-                                                <TableCell colSpan={3} align="right" sx={{ fontWeight: 600 }}>
-                                                    Total Amount:
-                                                </TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 600 }}>
-                                                    ₹{calculateTotal().toFixed(2)}
-                                                </TableCell>
-                                                <TableCell colSpan={2} />
-                                            </TableRow>
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
-                            )}
+                            </Paper>
+                        </Grid>
+                    )}
 
-                            <Box sx={{ 
-                                display: 'flex', 
-                                gap: 2, 
-                                justifyContent: 'flex-end',
-                                pt: 1 
-                            }}>
-                                <Button
-                                    variant="outlined"
-                                    onClick={() => navigate('/')}
-                                    sx={{
-                                        minWidth: 100,
-                                        py: 1,
-                                        borderColor: alpha(theme.palette.primary.main, 0.5),
-                                        color: theme.palette.primary.main,
-                                        '&:hover': {
-                                            borderColor: theme.palette.primary.main,
-                                            backgroundColor: alpha(theme.palette.primary.main, 0.04)
-                                        }
-                                    }}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting || sellItems.length === 0}
-                                    startIcon={isSubmitting ? undefined : <ShoppingCartIcon />}
-                                    sx={{
-                                        minWidth: 100,
-                                        py: 1,
-                                        '&:hover': {
-                                            transform: 'translateY(-1px)',
-                                            boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)'
-                                        },
-                                        transition: 'all 0.2s ease-in-out'
-                                    }}
-                                >
-                                    {isSubmitting ? (
-                                        <CircularProgress size={20} color="inherit" />
-                                    ) : (
-                                        'Complete sell'
-                                    )}
-                                </Button>
-                            </Box>
-                        </Stack>
-                    </CardContent>
-                </Card>
-            </Box>
+                    <Grid item xs={12}>
+                        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="outlined"
+                                onClick={() => {
+                                    setSelectedMedicine(null);
+                                    setSelectedBatches({});
+                                }}
+                            >
+                                Reset
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={handleAddItem}
+                                disabled={!selectedMedicine || Object.keys(selectedBatches).length === 0}
+                            >
+                                Add to Cart
+                            </Button>
+                        </Box>
+                    </Grid>
+                </Grid>
+            </Paper>
+
+            {/* Cart Section */}
+            {sellItems.length > 0 && (
+                <Paper sx={{ p: 3, mb: 3 }}>
+                    <Typography variant="h5" gutterBottom>
+                        Cart Items
+                    </Typography>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Medicine</TableCell>
+                                    <TableCell>Expiry Date</TableCell>
+                                    <TableCell>Quantity</TableCell>
+                                    <TableCell>Price</TableCell>
+                                    <TableCell>Total</TableCell>
+                                    <TableCell>Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {sellItems.map((item, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell>{item.medicineName}</TableCell>
+                                        <TableCell>
+                                            <Typography
+                                                sx={{
+                                                    color: getExpiryColor(getRemainingDays(item.expDate))
+                                                }}
+                                            >
+                                                {formatExpiryText(item.expDate)}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>{item.quantity}</TableCell>
+                                        <TableCell>₹{item.price}</TableCell>
+                                        <TableCell>₹{item.quantity * item.price}</TableCell>
+                                        <TableCell>
+                                            <IconButton
+                                                color="error"
+                                                onClick={() => handleRemoveItem(index)}
+                                                size="small"
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+
+                    <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <TextField
+                            label="Customer Name (Optional)"
+                            value={customer}
+                            onChange={(e) => setCustomer(e.target.value)}
+                            size="small"
+                            sx={{ width: 300 }}
+                        />
+                        <Box sx={{ textAlign: 'right' }}>
+                            <Typography variant="h6" gutterBottom>
+                                Total: ₹{calculateTotal()}
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                startIcon={<ShoppingCartIcon />}
+                                onClick={handleSubmit}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? <CircularProgress size={24} /> : 'Complete Sale'}
+                            </Button>
+                        </Box>
+                    </Box>
+                </Paper>
+            )}
+
+            <Snackbar
+                open={!!error}
+                autoHideDuration={6000}
+                onClose={() => setError(null)}
+            >
+                <Alert
+                    onClose={() => setError(null)}
+                    severity="error"
+                    sx={{ width: '100%' }}
+                >
+                    {error}
+                </Alert>
+            </Snackbar>
+
+            <Snackbar
+                open={showSuccess}
+                autoHideDuration={6000}
+                onClose={() => setShowSuccess(false)}
+            >
+                <Alert
+                    onClose={() => setShowSuccess(false)}
+                    severity="success"
+                    sx={{ width: '100%' }}
+                >
+                    Sale completed successfully!
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }; 

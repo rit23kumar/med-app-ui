@@ -130,12 +130,6 @@ const MedicineDetails: React.FC = () => {
                             <Typography variant="h5" gutterBottom>
                                 {medicine.name}
                             </Typography>
-                            <Typography variant="body1" color="textSecondary" paragraph>
-                                {medicine.description}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary">
-                                Manufacturer: {medicine.manufacture}
-                            </Typography>
                         </Grid>
                         <Grid item xs={12} md={6}>
                             <Typography variant="h6" color="textSecondary" gutterBottom>

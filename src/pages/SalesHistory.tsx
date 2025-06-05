@@ -72,6 +72,7 @@ const SalesHistory: React.FC = () => {
                                         handleSearch();
                                     }
                                 }}
+                                format="dd/MM/yy"
                             />
                         </Grid>
                         <Grid item xs={12} sm={4}>
@@ -84,6 +85,7 @@ const SalesHistory: React.FC = () => {
                                         handleSearch();
                                     }
                                 }}
+                                format="dd/MM/yy"
                             />
                         </Grid>
                         <Grid item xs={12} sm={4}>
@@ -130,13 +132,13 @@ const SalesHistory: React.FC = () => {
                             ) : (
                                 sales.map((sale) => (
                                     <TableRow key={sale.id}>
-                                        <TableCell>{new Date(sale.date).toLocaleString()}</TableCell>
+                                        <TableCell>{format(new Date(sale.date), 'dd/MM/yy')}</TableCell>
                                         <TableCell>{sale.customer || 'N/A'}</TableCell>
-                                        <TableCell>${sale.totalAmount.toFixed(2)}</TableCell>
+                                        <TableCell>₹{sale.totalAmount.toFixed(2)}</TableCell>
                                         <TableCell>
                                             {sale.items.map((item) => (
                                                 <div key={item.id}>
-                                                    {item.medicine.name} - {item.quantity} x ${item.price.toFixed(2)}
+                                                    {item.medicine.name} - {item.quantity} x ₹{item.price.toFixed(2)}
                                                 </div>
                                             ))}
                                         </TableCell>

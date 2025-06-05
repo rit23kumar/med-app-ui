@@ -265,25 +265,6 @@ export const MedicineList: React.FC = () => {
                     >
                         Medicine Inventory
                     </Typography>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => navigate('/add-medicine')}
-                        startIcon={<AddIcon />}
-                        fullWidth={isMobile}
-                        sx={{ 
-                            px: 3,
-                            py: 1,
-                            fontWeight: 600,
-                            '&:hover': {
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)',
-                            },
-                            transition: 'all 0.2s ease-in-out'
-                        }}
-                    >
-                        Add New Medicine
-                    </Button>
                 </Box>
             </Box>
             
@@ -422,12 +403,6 @@ export const MedicineList: React.FC = () => {
                                             <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
                                                 {medicine.name}
                                             </Typography>
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                                {medicine.description || 'No description'}
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary">
-                                                Manufacturer: {medicine.manufacture || 'Not specified'}
-                                            </Typography>
                                         </Box>
                                         <IconButton
                                             size="small"
@@ -464,8 +439,6 @@ export const MedicineList: React.FC = () => {
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>ID</TableCell>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>Name</TableCell>
-                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Description</TableCell>
-                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Manufacturer</TableCell>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
@@ -473,8 +446,6 @@ export const MedicineList: React.FC = () => {
                             {loading ? (
                                 Array.from(new Array(5)).map((_, index) => (
                                     <TableRow key={index}>
-                                        <TableCell><Skeleton animation="wave" height={35} /></TableCell>
-                                        <TableCell><Skeleton animation="wave" height={35} /></TableCell>
                                         <TableCell><Skeleton animation="wave" height={35} /></TableCell>
                                         <TableCell><Skeleton animation="wave" height={35} /></TableCell>
                                         <TableCell><Skeleton animation="wave" height={35} /></TableCell>
@@ -515,8 +486,6 @@ export const MedicineList: React.FC = () => {
                                             />
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
-                                        <TableCell>{medicine.description}</TableCell>
-                                        <TableCell>{medicine.manufacture}</TableCell>
                                         <TableCell>
                                             <IconButton
                                                 size="medium"

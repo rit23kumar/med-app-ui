@@ -64,12 +64,11 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Date Added</TableCell>
-                        <TableCell>Expiry Date</TableCell>
-                        <TableCell>Remaining Days</TableCell>
-                        <TableCell align="right">Initial Quantity</TableCell>
-                        <TableCell align="right">Available</TableCell>
-                        <TableCell align="right">Price</TableCell>
+                        <TableCell>Batch ID</TableCell>
+                        <TableCell>Expiration Date</TableCell>
+                        <TableCell>Quantity</TableCell>
+                        <TableCell>Available</TableCell>
+                        <TableCell>Price</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -83,29 +82,11 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                                 key={entry.id}
                                 sx={entry.availableQuantity === 0 ? { opacity: 0.6 } : undefined}
                             >
-                                <TableCell>
-                                    {format(new Date(entry.createdAt), 'MMM dd, yyyy')}
-                                </TableCell>
-                                <TableCell>
-                                    {format(expiryDate, 'MMM dd, yyyy')}
-                                </TableCell>
-                                <TableCell>
-                                    <Chip
-                                        label={getRemainingDaysLabel(remainingDays)}
-                                        size="small"
-                                        sx={{
-                                            backgroundColor: `${color}15`,
-                                            color: color,
-                                            fontWeight: 500,
-                                            '& .MuiChip-label': {
-                                                px: 1
-                                            }
-                                        }}
-                                    />
-                                </TableCell>
-                                <TableCell align="right">{entry.quantity}</TableCell>
-                                <TableCell align="right">{entry.availableQuantity}</TableCell>
-                                <TableCell align="right">₹{entry.price.toFixed(2)}</TableCell>
+                                <TableCell>{entry.id}</TableCell>
+                                <TableCell>{format(expiryDate, 'dd/MM/yy')}</TableCell>
+                                <TableCell>{entry.quantity}</TableCell>
+                                <TableCell>{entry.availableQuantity}</TableCell>
+                                <TableCell>₹{entry.price.toFixed(2)}</TableCell>
                             </TableRow>
                         );
                     })}

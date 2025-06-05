@@ -18,9 +18,7 @@ interface AddMedicineDialogProps {
 
 const AddMedicineDialog: React.FC<AddMedicineDialogProps> = ({ open, onClose }) => {
     const [medicine, setMedicine] = useState<Partial<Medicine>>({
-        name: '',
-        description: '',
-        manufacture: '',
+        name: ''
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,9 +35,7 @@ const AddMedicineDialog: React.FC<AddMedicineDialogProps> = ({ open, onClose }) 
             onClose(true);
             // Reset form
             setMedicine({
-                name: '',
-                description: '',
-                manufacture: '',
+                name: ''
             });
         } catch (error) {
             console.error('Error adding medicine:', error);
@@ -48,7 +44,7 @@ const AddMedicineDialog: React.FC<AddMedicineDialogProps> = ({ open, onClose }) 
 
     return (
         <Dialog open={open} onClose={() => onClose(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Add New Medicine</DialogTitle>
+            <DialogTitle>Add New Medicine2</DialogTitle>
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
                     <TextField
@@ -58,24 +54,6 @@ const AddMedicineDialog: React.FC<AddMedicineDialogProps> = ({ open, onClose }) 
                         onChange={handleChange}
                         fullWidth
                         required
-                        autoComplete="off"
-                    />
-                    <TextField
-                        name="description"
-                        label="Description"
-                        value={medicine.description}
-                        onChange={handleChange}
-                        fullWidth
-                        multiline
-                        rows={3}
-                        autoComplete="off"
-                    />
-                    <TextField
-                        name="manufacture"
-                        label="Manufacturer"
-                        value={medicine.manufacture}
-                        onChange={handleChange}
-                        fullWidth
                         autoComplete="off"
                     />
                 </Box>

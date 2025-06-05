@@ -94,88 +94,26 @@ export const MedicineDetail: React.FC = () => {
                 }}>
                     <CardContent sx={{ p: 3 }}>
                         <Stack spacing={3}>
-                            {/* Medicine Name and Manufacturer */}
-                            <Box sx={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                            }}>
-                                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            <Box sx={{ p: 3 }}>
+                                <Typography variant="h6" gutterBottom>
                                     {medicine.name}
                                 </Typography>
-                                <Chip 
-                                    label={medicine.manufacture}
-                                    size="medium"
-                                    sx={{
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
-                                        fontWeight: 500
-                                    }}
-                                />
-                            </Box>
 
-                            {/* Description */}
-                            <Box>
-                                <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                                    Description
-                                </Typography>
-                                <Paper 
-                                    elevation={0}
-                                    sx={{ 
-                                        p: 2,
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                        borderRadius: 1
-                                    }}
-                                >
-                                    <Typography variant="body1">
-                                        {medicine.description}
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                        Stock Information
                                     </Typography>
-                                </Paper>
-                            </Box>
-
-                            <Divider />
-
-                            {/* Stock Information */}
-                            <Box>
-                                <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 500 }}>
-                                    Stock Information
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 2 }}>
-                                    <Paper 
-                                        elevation={0}
-                                        sx={{ 
-                                            p: 2,
-                                            flex: 1,
-                                            backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                            borderRadius: 1
-                                        }}
-                                    >
-                                        <Typography variant="body2" color="text.secondary">
-                                            Quantity
+                                    <Box sx={{ mt: 1 }}>
+                                        <Typography variant="body2">
+                                            Quantity: {medicine.stock?.quantity || 0}
                                         </Typography>
-                                        <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
-                                            {medicine.stock?.quantity || 'N/A'}
+                                        <Typography variant="body2">
+                                            Price: ₹{medicine.stock?.price || 0}
                                         </Typography>
-                                    </Paper>
-                                    <Paper 
-                                        elevation={0}
-                                        sx={{ 
-                                            p: 2,
-                                            flex: 1,
-                                            backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                            borderRadius: 1
-                                        }}
-                                    >
-                                        <Typography variant="body2" color="text.secondary">
-                                            Price
+                                        <Typography variant="body2">
+                                            Expiry Date: {medicine.stock?.expDate || 'N/A'}
                                         </Typography>
-                                        <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
-                                            ${medicine.stock?.price?.toFixed(2) || 'N/A'}
-                                        </Typography>
-                                    </Paper>
+                                    </Box>
                                 </Box>
                             </Box>
                         </Stack>
