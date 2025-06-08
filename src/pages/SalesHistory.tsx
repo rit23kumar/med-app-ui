@@ -13,7 +13,9 @@ import {
     Button,
     Grid,
     Alert,
-    CircularProgress
+    CircularProgress,
+    Switch,
+    FormControlLabel
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -25,6 +27,8 @@ import SalesReportDialog from '../components/SalesReportDialog';
 
 const SalesHistory: React.FC = () => {
     const today = new Date();
+    const [singleDateMode, setSingleDateMode] = useState(true);
+    const [date, setDate] = useState<Date>(today);
     const [fromDate, setFromDate] = useState<Date>(today);
     const [toDate, setToDate] = useState<Date>(today);
     const [sales, setSales] = useState<sell[]>([]);
@@ -34,12 +38,18 @@ const SalesHistory: React.FC = () => {
     const [datesChanged, setDatesChanged] = useState(false);
 
     const handleSearch = async () => {
-        if (fromDate && toDate) {
+        let searchFromDate = fromDate;
+        let searchToDate = toDate;
+        if (singleDateMode) {
+            searchFromDate = date;
+            searchToDate = date;
+        }
+        if (searchFromDate && searchToDate) {
             try {
                 setLoading(true);
                 setError(null);
-                const formattedFromDate = format(fromDate, 'yyyy-MM-dd');
-                const formattedToDate = format(toDate, 'yyyy-MM-dd');
+                const formattedFromDate = format(searchFromDate, 'yyyy-MM-dd');
+                const formattedToDate = format(searchToDate, 'yyyy-MM-dd');
                 const data = await getSalesHistory(formattedFromDate, formattedToDate);
                 const sorted = Array.isArray(data)
                     ? data.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -56,8 +66,10 @@ const SalesHistory: React.FC = () => {
         }
     };
 
-    const handleDateChange = (newValue: Date | null, isFromDate: boolean) => {
-        if (isFromDate) {
+    const handleDateChange = (newValue: Date | null, isFromDate?: boolean) => {
+        if (singleDateMode) {
+            setDate(newValue || today);
+        } else if (isFromDate) {
             setFromDate(newValue || today);
         } else {
             setToDate(newValue || today);
@@ -76,29 +88,58 @@ const SalesHistory: React.FC = () => {
                     Sells History
                 </Typography>
 
-                <Paper sx={{ p: 2, mb: 2 }}>
+                <Paper sx={{ pl: 2, pb: 2, pt: 1,  mb: 2 }}>
+                    <Box sx={{ mb: 1, display: 'flex', justifyContent: 'flex-start' }}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    sx={{ ml: 1 }}
+                                    checked={!singleDateMode}
+                                    onChange={() => setSingleDateMode(mode => !mode)}
+                                    color="primary"
+                                    size="small"
+                                />
+                            }
+                            label={<span style={{ fontSize: 14 }}>Enable Date Range Mode</span>}
+                        />
+                    </Box>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={3}>
-                            <DatePicker
-                                label="From Date"
-                                value={fromDate}
-                                onChange={(newValue) => handleDateChange(newValue, true)}
-                                format="dd/MM/yy"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                            <DatePicker
-                                label="To Date"
-                                value={toDate}
-                                onChange={(newValue) => handleDateChange(newValue, false)}
-                                format="dd/MM/yy"
-                            />
-                        </Grid>
+                        {singleDateMode ? (
+                            <Grid item xs={12} sm={3}>
+                                <DatePicker
+                                    label="Date"
+                                    value={date}
+                                    onChange={(newValue) => handleDateChange(newValue)}
+                                    format="dd/MM/yy"
+                                />
+                            </Grid>
+                        ) : (
+                            <>
+                                <Grid item xs={12} sm={3}>
+                                    <DatePicker
+                                        label="From Date"
+                                        value={fromDate}
+                                        onChange={(newValue) => handleDateChange(newValue, true)}
+                                        format="dd/MM/yy"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={3}>
+                                    <DatePicker
+                                        label="To Date"
+                                        value={toDate}
+                                        onChange={(newValue) => handleDateChange(newValue, false)}
+                                        format="dd/MM/yy"
+                                    />
+                                </Grid>
+                            </>
+                        )}
                         <Grid item xs={12} sm={3}>
                             <Button
                                 variant="contained"
                                 onClick={handleSearch}
-                                disabled={!fromDate || !toDate || loading}
+                                disabled={
+                                    (singleDateMode ? !date : !fromDate || !toDate) || loading
+                                }
                                 fullWidth
                             >
                                 {loading ? <CircularProgress size={24} /> : 'Search'}
@@ -200,8 +241,8 @@ const SalesHistory: React.FC = () => {
                     open={reportDialogOpen}
                     onClose={() => setReportDialogOpen(false)}
                     sales={sales}
-                    fromDate={fromDate}
-                    toDate={toDate}
+                    fromDate={singleDateMode ? date : fromDate}
+                    toDate={singleDateMode ? date : toDate}
                 />
             </Container>
         </LocalizationProvider>

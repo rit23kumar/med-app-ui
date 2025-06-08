@@ -44,8 +44,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const menuItems = [
-    { text: 'Sell Medicine', path: '/', icon: <ShoppingCartIcon /> },
-    { text: 'Medicine Inventory', path: '/medicine-inventory', icon: <DashboardIcon /> },
+    { text: 'Sell', path: '/', icon: <ShoppingCartIcon /> },
+    { text: 'Inventory', path: '/medicine-inventory', icon: <DashboardIcon /> },
     { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon /> },
     { text: 'Sells History', path: '/sales-history', icon: <ReceiptIcon /> },
     { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon /> }

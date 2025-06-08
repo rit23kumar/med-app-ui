@@ -51,7 +51,12 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
     const calculateModeTotal = (mode: string) => {
         return sales
             .filter(sale => sale.modeOfPayment === mode)
-            .reduce((total, sale) => total + (sale.totalAmount || 0), 0);
+            .reduce((total, sale) => {
+                return total + (sale.items?.reduce((itemSum, item) => {
+                    const discount = item.discount ?? 0;
+                    return itemSum + item.price * item.quantity * (1 - discount / 100);
+                }, 0) || 0);
+            }, 0);
     };
 
     const cashTotal = calculateModeTotal('Cash');
@@ -59,7 +64,12 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
     const cardTotal = calculateModeTotal('Card');
     const otherTotal = sales
         .filter(sale => !sale.modeOfPayment || !['Cash', 'UPI', 'Card'].includes(sale.modeOfPayment))
-        .reduce((total, sale) => total + (sale.totalAmount || 0), 0);
+        .reduce((total, sale) => {
+            return total + (sale.items?.reduce((itemSum, item) => {
+                const discount = item.discount ?? 0;
+                return itemSum + item.price * item.quantity * (1 - discount / 100);
+            }, 0) || 0);
+        }, 0);
     const totalSales = cashTotal + upiTotal + cardTotal + otherTotal;
 
     const formatDateRange = () => {
