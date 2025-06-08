@@ -358,9 +358,8 @@ const StockManagement: React.FC = () => {
                             </Grid>
                         </Grid>
                     </form>
-                </Paper>
 
-                {selectedMedicine && (
+                    {selectedMedicine && (
                     <Paper sx={{ p: 3 }}>
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                             <Typography variant="h6">
@@ -385,6 +384,9 @@ const StockManagement: React.FC = () => {
                         />
                     </Paper>
                 )}
+                </Paper>
+
+                
 
                 {/* Bulk Upload Section */}
                 <Card sx={{ mb: 3 }}>

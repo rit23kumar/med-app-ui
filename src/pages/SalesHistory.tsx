@@ -133,8 +133,9 @@ const SalesHistory: React.FC = () => {
                                         <TableCell>
                                             {(sale.items as sellItem[]).map((item: sellItem) => (
                                                 <div key={item.id}>
-                                                    {item.medicine.name} - {item.quantity} x ₹{item.price.toFixed(2)} (Discount: {item.discount ?? 0}%)
-                                                </div>
+                                                {item.medicine.name} — {item.quantity} × ₹{item.price.toFixed(2)} → ₹
+                                                {(item.quantity * item.price * (1 - (item.discount ?? 0) / 100)).toFixed(2)} (Disc. {item.discount ?? 0}%)
+                                              </div>
                                             ))}
                                         </TableCell>
                                     </TableRow>

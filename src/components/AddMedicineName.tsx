@@ -94,7 +94,7 @@ export const AddMedicineName: React.FC<AddMedicineNameProps> = ({ onSuccess }) =
                 <TextField
                     fullWidth
                     required
-                    label="Medicine Name"
+                    label="New Medicine Name"
                     value={medicineName}
                     onChange={(e) => setMedicineName(e.target.value)}
                     disabled={loading}

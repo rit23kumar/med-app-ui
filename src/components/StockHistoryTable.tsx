@@ -73,7 +73,7 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                     <TableRow>
                         <TableCell>Batch ID</TableCell>
                         <TableCell>Expiration Date</TableCell>
-                        <TableCell>Quantity</TableCell>
+                        <TableCell>Purchased</TableCell>
                         <TableCell>Available</TableCell>
                         <TableCell>Price</TableCell>
                     </TableRow>
