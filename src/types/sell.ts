@@ -6,6 +6,7 @@ export interface sellItem {
     quantity: number;
     price: number;
     expDate: string;
+    discount?: number;
 }
 
 export interface sell {
@@ -13,15 +14,18 @@ export interface sell {
     date: string;
     customer?: string;
     totalAmount: number;
+    modeOfPayment?: string;
     items: sellItem[];
 }
 
 export interface CreateSellRequest {
     customer?: string;
+    modeOfPayment: 'Cash' | 'Card' | 'UPI';
     items: {
         medicineId: number;
         quantity: number;
         price: number;
         expDate: string;
+        discount?: number;
     }[];
 } 

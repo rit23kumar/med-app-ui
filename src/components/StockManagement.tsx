@@ -28,6 +28,10 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import InfoIcon from '@mui/icons-material/Info';
 import Tooltip from '@mui/material/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 const timeZone = 'Asia/Kolkata';
 
@@ -44,6 +48,7 @@ const StockManagement: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [bulkResultModal, setBulkResultModal] = useState({ open: false, results: [] as any[] });
 
     // Calculate total available quantity
     const totalAvailable = useMemo(() => {
@@ -64,7 +69,7 @@ const StockManagement: React.FC = () => {
 
     const loadMedicines = async () => {
         try {
-            const response = await medicineApi.getAllMedicines(0, 100);
+            const response = await medicineApi.getMedicines(0, 100);
             setMedicines(response.content);
         } catch (error) {
             console.error('Error loading medicines:', error);
@@ -159,22 +164,16 @@ const StockManagement: React.FC = () => {
                     .filter(line => line.trim())
                     .map(line => {
                         const [medicineName, expDate, quantity, price] = line.split(',').map(field => field.trim());
-
-                        if (!medicineName || !expDate || !quantity || !price) {
-                            throw new Error(`Missing required fields in line: ${line}`);
-                        }
-
-                        // Convert date from dd-MM-yyyy to yyyy-MM-dd
-                        const [day, month, year] = expDate.split('-');
-                        const formattedDate = `${year}-${month}-${day}`;
-
                         return {
                             medicineName,
-                            stock: {
-                                expDate: formattedDate,
+                            stock: (expDate && quantity && price) ? {
+                                expDate: (() => {
+                                    const [day, month, year] = expDate.split('-');
+                                    return `${year}-${month}-${day}`;
+                                })(),
                                 quantity: parseInt(quantity),
                                 price: parseFloat(price)
-                            }
+                            } : null
                         };
                     });
 
@@ -189,30 +188,41 @@ const StockManagement: React.FC = () => {
                 const results = await Promise.all(
                     stockEntries.map(async (entry) => {
                         try {
-                            // Find the medicine by name
-                            const searchResult = await medicineApi.searchMedicines(entry.medicineName, 'contains');
-                            const medicine = searchResult.find(m => 
-                                m.name.toLowerCase() === entry.medicineName.toLowerCase()
-                            );
-
-                            if (!medicine) {
+                            if (!entry.medicineName) {
                                 return {
                                     success: false,
-                                    name: entry.medicineName,
-                                    reason: 'Medicine not found'
+                                    name: '',
+                                    reason: 'Missing medicine name'
                                 };
                             }
-
-                            // Add stock
-                            await medicineApi.addMedicineWithStock({
-                                medicine,
-                                stock: entry.stock
-                            });
-
-                            return {
-                                success: true,
-                                name: entry.medicineName
-                            };
+                            let searchResult = await medicineApi.searchMedicines(entry.medicineName, 'contains');
+                            let medicine = searchResult.find(m => 
+                                m.name.toLowerCase() === entry.medicineName.toLowerCase()
+                            );
+                            let isNew = false;
+                            if (!medicine) {
+                                medicine = await medicineApi.addMedicine({ name: entry.medicineName });
+                                isNew = true;
+                            }
+                            if (entry.stock) {
+                                await medicineApi.addMedicineWithStock({
+                                    medicine,
+                                    stock: entry.stock
+                                });
+                                return {
+                                    success: true,
+                                    name: entry.medicineName,
+                                    isNew,
+                                    stock: entry.stock
+                                };
+                            } else {
+                                return {
+                                    success: true,
+                                    name: entry.medicineName,
+                                    isNew,
+                                    stock: null
+                                };
+                            }
                         } catch (err: any) {
                             return {
                                 success: false,
@@ -223,22 +233,23 @@ const StockManagement: React.FC = () => {
                     })
                 );
 
+                setBulkResultModal({ open: true, results });
+
                 const successfulUploads = results.filter(r => r.success);
                 const failedUploads = results.filter(r => !r.success);
 
                 if (successfulUploads.length > 0) {
-                    showNotification(`Successfully added stock for ${successfulUploads.length} medicine(s)`, 'success');
+                    showNotification(`Successfully processed ${successfulUploads.length} medicine(s)`, 'success');
                     loadMedicines();
                 }
 
                 if (failedUploads.length > 0) {
                     const errorMessage = failedUploads
-                        .map(f => `${f.name}: ${f.reason}`)
+                        .map(f => `${f.name || '(blank)'}: ${f.reason}`)
                         .join('\n');
-                    setUploadError(`Failed to add stock for:\n${errorMessage}`);
+                    setUploadError(`Failed to process:\n${errorMessage}`);
                 }
 
-                // Reset file input
                 if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                 }
@@ -250,7 +261,6 @@ const StockManagement: React.FC = () => {
                 setIsSubmitting(false);
             }
         };
-
         reader.readAsText(file);
     };
 
@@ -436,6 +446,63 @@ const StockManagement: React.FC = () => {
                         {notification.message}
                     </Alert>
                 </Snackbar>
+
+                <Dialog open={bulkResultModal.open} onClose={() => setBulkResultModal({ open: false, results: [] })} maxWidth="md" fullWidth>
+                    <DialogTitle>Bulk Upload Results</DialogTitle>
+                    <DialogContent dividers>
+                        {bulkResultModal.results.length === 0 ? (
+                            <Typography>No results to display.</Typography>
+                        ) : (
+                            <Box>
+                                {bulkResultModal.results.filter(r => r.success && r.isNew).length > 0 && (
+                                    <Box mb={2}>
+                                        <Typography variant="subtitle1" fontWeight={600}>New Medicines Added:</Typography>
+                                        <ul>
+                                            {bulkResultModal.results.filter(r => r.success && r.isNew).map((r, idx) => (
+                                                <li key={idx}>{r.name}</li>
+                                            ))}
+                                        </ul>
+                                    </Box>
+                                )}
+                                {bulkResultModal.results.filter(r => r.success && r.stock).length > 0 && (
+                                    <Box mb={2}>
+                                        <Typography variant="subtitle1" fontWeight={600}>Stock Updates:</Typography>
+                                        <ul>
+                                            {bulkResultModal.results.filter(r => r.success && r.stock).map((r, idx) => (
+                                                <li key={idx}>
+                                                    <b>{r.name}</b> — Quantity: {r.stock.quantity}, Price: ₹{r.stock.price}, Expiry: {r.stock.expDate} {r.isNew ? <>(new medicine)</> : null}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </Box>
+                                )}
+                                {bulkResultModal.results.filter(r => r.success && !r.stock && r.isNew).length > 0 && (
+                                    <Box mb={2}>
+                                        <Typography variant="subtitle1" fontWeight={600}>Medicines Added Without Stock:</Typography>
+                                        <ul>
+                                            {bulkResultModal.results.filter(r => r.success && !r.stock && r.isNew).map((r, idx) => (
+                                                <li key={idx}>{r.name}</li>
+                                            ))}
+                                        </ul>
+                                    </Box>
+                                )}
+                                {bulkResultModal.results.filter(r => !r.success).length > 0 && (
+                                    <Box mb={2}>
+                                        <Typography variant="subtitle1" fontWeight={600} color="error">Failures:</Typography>
+                                        <ul>
+                                            {bulkResultModal.results.filter(r => !r.success).map((r, idx) => (
+                                                <li key={idx}><b>{r.name || '(blank)'}</b>: {r.reason}</li>
+                                            ))}
+                                        </ul>
+                                    </Box>
+                                )}
+                            </Box>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setBulkResultModal({ open: false, results: [] })} color="primary" variant="contained">Close</Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </LocalizationProvider>
     );

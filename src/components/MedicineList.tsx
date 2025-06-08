@@ -191,7 +191,7 @@ export const MedicineList: React.FC = () => {
                 setMedicines(data);
                 setTotalElements(data.length);
             } else {
-                const response = await medicineApi.getAllMedicines(page, rowsPerPage);
+                const response = await medicineApi.getMedicines(page, rowsPerPage);
                 setMedicines(response.content);
                 setTotalElements(response.totalElements);
             }

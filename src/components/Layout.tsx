@@ -47,7 +47,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Sell Medicine', path: '/', icon: <ShoppingCartIcon /> },
     { text: 'Medicine Inventory', path: '/medicine-inventory', icon: <DashboardIcon /> },
     { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon /> },
-    { text: 'Sales History', path: '/sales-history', icon: <ReceiptIcon /> },
+    { text: 'Sells History', path: '/sales-history', icon: <ReceiptIcon /> },
     { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon /> }
   ];
 

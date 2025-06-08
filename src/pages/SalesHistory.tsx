@@ -20,13 +20,13 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format } from 'date-fns';
 import { getSalesHistory } from '../services/historyService';
-import { Sell } from '../types';
+import { sell, sellItem } from '../types/sell';
 
 const SalesHistory: React.FC = () => {
     const today = new Date();
     const [fromDate, setFromDate] = useState<Date>(today);
     const [toDate, setToDate] = useState<Date>(today);
-    const [sales, setSales] = useState<Sell[]>([]);
+    const [sales, setSales] = useState<sell[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,8 +40,8 @@ const SalesHistory: React.FC = () => {
                 const data = await getSalesHistory(formattedFromDate, formattedToDate);
                 setSales(Array.isArray(data) ? data : []);
             } catch (err) {
-                setError('Failed to fetch sales history');
-                console.error('Error fetching sales history:', err);
+                setError('Failed to fetch Sells History');
+                console.error('Error fetching Sells History:', err);
                 setSales([]);
             } finally {
                 setLoading(false);
@@ -57,7 +57,7 @@ const SalesHistory: React.FC = () => {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Typography variant="h4" gutterBottom>
-                    Sales History
+                    Sells History
                 </Typography>
 
                 <Paper sx={{ p: 2, mb: 2 }}>
@@ -113,6 +113,7 @@ const SalesHistory: React.FC = () => {
                                 <TableCell>Date</TableCell>
                                 <TableCell>Customer</TableCell>
                                 <TableCell>Total Amount</TableCell>
+                                <TableCell>Mode</TableCell>
                                 <TableCell>Items</TableCell>
                             </TableRow>
                         </TableHead>
@@ -132,13 +133,14 @@ const SalesHistory: React.FC = () => {
                             ) : (
                                 sales.map((sale) => (
                                     <TableRow key={sale.id}>
-                                        <TableCell>{format(new Date(sale.date), 'dd/MM/yy')}</TableCell>
+                                        <TableCell>{format(new Date(sale.date), 'dd/MM/yy HH:mm')}</TableCell>
                                         <TableCell>{sale.customer || 'N/A'}</TableCell>
                                         <TableCell>₹{sale.totalAmount.toFixed(2)}</TableCell>
+                                        <TableCell>{sale.modeOfPayment || 'N/A'}</TableCell>
                                         <TableCell>
-                                            {sale.items.map((item) => (
+                                            {(sale.items as sellItem[]).map((item: sellItem) => (
                                                 <div key={item.id}>
-                                                    {item.medicine.name} - {item.quantity} x ₹{item.price.toFixed(2)}
+                                                    {item.medicine.name} - {item.quantity} x ₹{item.price.toFixed(2)} (Discount: {item.discount ?? 0}%)
                                                 </div>
                                             ))}
                                         </TableCell>

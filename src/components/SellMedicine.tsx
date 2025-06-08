@@ -26,7 +26,11 @@ import {
     Checkbox,
     FormControlLabel,
     Grid,
-    Snackbar
+    Snackbar,
+    MenuItem,
+    Select,
+    InputLabel,
+    FormControl
 } from '@mui/material';
 import { Medicine, StockHistory } from '../types/medicine';
 import { CreateSellRequest } from '../types/sell';
@@ -38,6 +42,10 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { format, differenceInDays } from 'date-fns';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 interface sellItem {
     medicineId: number;
@@ -46,6 +54,7 @@ interface sellItem {
     price: number;
     expDate: string;
     batchId: number;
+    discount?: number | '';
 }
 
 interface FormErrors {
@@ -72,6 +81,12 @@ export const SellMedicine: React.FC = () => {
     const [showSuccess, setShowSuccess] = useState(false);
     const [availableBatches, setAvailableBatches] = useState<StockHistory[]>([]);
     const [selectedBatches, setSelectedBatches] = useState<{ [key: number]: SelectedBatchQuantity }>({});
+    const [showSellModal, setShowSellModal] = useState(false);
+    const [isPrinting, setIsPrinting] = useState(false);
+    const [printError, setPrintError] = useState<string | null>(null);
+    const receiptRef = React.useRef<HTMLDivElement>(null);
+    const quantityRefs = React.useRef<{ [batchId: number]: HTMLInputElement | null }>({});
+    const [modeOfPayment, setModeOfPayment] = useState<'Cash' | 'Card' | 'UPI'>('Cash');
 
     useEffect(() => {
         fetchMedicines();
@@ -99,9 +114,26 @@ export const SellMedicine: React.FC = () => {
     const loadAvailableBatches = async (medicineId: number) => {
         try {
             const history = await medicineApi.getStockHistory(medicineId, false);
-            // Filter out batches with zero available quantity
-            const availableBatches = history.filter(batch => batch.availableQuantity > 0);
+            let availableBatches = history.filter(batch => batch.availableQuantity > 0);
+            // Sort by days remaining (ascending)
+            availableBatches = availableBatches.sort((a, b) => {
+                const daysA = getRemainingDays(a.expDate);
+                const daysB = getRemainingDays(b.expDate);
+                return daysA - daysB;
+            });
             setAvailableBatches(availableBatches);
+            // Auto-select if only one batch
+            if (availableBatches.length === 1) {
+                setSelectedBatches({
+                    [availableBatches[0].id]: { batch: availableBatches[0], quantity: null as unknown as number }
+                });
+                // Focus the quantity field after rendering
+                setTimeout(() => {
+                    quantityRefs.current[availableBatches[0].id]?.focus();
+                }, 200);
+            } else {
+                setSelectedBatches({});
+            }
         } catch (err) {
             setError('Failed to fetch available batches');
             console.error('Error fetching batches:', err);
@@ -115,10 +147,13 @@ export const SellMedicine: React.FC = () => {
                 delete newSelected[batch.id];
             } else {
                 newSelected[batch.id] = { batch, quantity: null as unknown as number };
+                // Focus the quantity field if selecting
+                setTimeout(() => {
+                    quantityRefs.current[batch.id]?.focus();
+                }, 100);
             }
             return newSelected;
         });
-        // Clear any errors for this batch
         setFormErrors(prev => ({
             ...prev,
             quantities: {
@@ -242,7 +277,8 @@ export const SellMedicine: React.FC = () => {
             quantity,
             price: batch.price,
             expDate: batch.expDate,
-            batchId: batch.id
+            batchId: batch.id,
+            discount: ''
         }));
 
         setsellItems([...sellItems, ...newItems]);
@@ -257,51 +293,89 @@ export const SellMedicine: React.FC = () => {
         setsellItems(sellItems.filter((_, i) => i !== index));
     };
 
-    const calculateTotal = () => {
-        return sellItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const handleDiscountChange = (index: number, value: number | '') => {
+        setsellItems(items => items.map((item, i) => i === index ? { ...item, discount: value } : item));
     };
 
-    const handleSubmit = async () => {
+    const calculateTotal = () => {
+        return sellItems.reduce((total, item) => {
+            const discount = item.discount === '' ? 0 : item.discount || 0;
+            const discountedPrice = item.price * item.quantity * (1 - discount / 100);
+            return total + discountedPrice;
+        }, 0);
+    };
+
+    const handleSell = async (print: boolean) => {
         if (sellItems.length === 0) {
             setError('Please add at least one item to the sell');
             return;
         }
-
         setIsSubmitting(true);
         setError(null);
-
+        setPrintError(null);
         try {
             const sellRequest: CreateSellRequest = {
                 customer: customer || undefined,
+                modeOfPayment,
                 items: sellItems.map(item => ({
                     medicineId: item.medicineId,
                     quantity: item.quantity,
                     price: item.price,
-                    expDate: item.expDate
+                    expDate: item.expDate,
+                    discount: item.discount === '' ? 0 : item.discount || 0
                 }))
             };
-
             await sellApi.createsell(sellRequest);
             setShowSuccess(true);
-            // Reset form
             setsellItems([]);
             setCustomer('');
             setSelectedMedicine(null);
             setSelectedBatches({});
-            
-            // Hide success message after 2 seconds
-            setTimeout(() => {
-                setShowSuccess(false);
-            }, 2000);
+            setShowSellModal(false);
+            if (print) {
+                setTimeout(() => {
+                    handlePrintReceipt();
+                }, 300);
+            }
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || 
-                               error.response?.data?.error || 
-                               error.message || 
-                               'Failed to create sell. Please try again.';
+                error.response?.data?.error || 
+                error.message || 
+                'Failed to create sell. Please try again.';
             setError(errorMessage);
-            console.error('Error creating sell:', error);
+            setPrintError(errorMessage);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handlePrintReceipt = () => {
+        if (!receiptRef.current) return;
+        const printContents = receiptRef.current.innerHTML;
+        const printWindow = window.open('', '', 'width=595,height=842'); // A5 size in px
+        if (printWindow) {
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Receipt</title>
+                    <style>
+                        @media print {
+                            @page { size: A5 portrait; margin: 10mm; }
+                            body { font-family: Arial, sans-serif; }
+                            .receipt-table { width: 100%; border-collapse: collapse; }
+                            .receipt-table th, .receipt-table td { border: 1px solid #ccc; padding: 4px; font-size: 12px; }
+                            .receipt-header { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+                        </style>
+                    </head>
+                    <body>
+                        ${printContents}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
         }
     };
 
@@ -323,9 +397,9 @@ export const SellMedicine: React.FC = () => {
         const formattedDate = format(new Date(expDate), 'MMM dd, yyyy');
         
         if (remainingDays < 0) {
-            return `Expiry: ${formattedDate} (Expired ${Math.abs(remainingDays)} days ago)`;
+            return `${formattedDate} (Expired ${Math.abs(remainingDays)} days ago)`;
         }
-        return `Expiry: ${formattedDate} (${remainingDays} Days Remaining)`;
+        return `${formattedDate} (${remainingDays} Days Remaining)`;
     };
 
     return (
@@ -359,6 +433,12 @@ export const SellMedicine: React.FC = () => {
                             )}
                         />
                     </Grid>
+
+                    {selectedMedicine && availableBatches.length === 0 && (
+                        <Grid item xs={12}>
+                            <Alert severity="warning">No stock available for {selectedMedicine.name}.</Alert>
+                        </Grid>
+                    )}
 
                     {selectedMedicine && availableBatches.length > 0 && (
                         <Grid item xs={12}>
@@ -408,6 +488,7 @@ export const SellMedicine: React.FC = () => {
                                                                 helperText={formErrors.quantities?.[batch.id]}
                                                                 inputProps={{ min: 1, max: batch.availableQuantity }}
                                                                 sx={{ width: 100 }}
+                                                                inputRef={el => { quantityRefs.current[batch.id] = el; }}
                                                             />
                                                         )}
                                                     </TableCell>
@@ -458,6 +539,7 @@ export const SellMedicine: React.FC = () => {
                                     <TableCell>Expiry Date</TableCell>
                                     <TableCell>Quantity</TableCell>
                                     <TableCell>Price</TableCell>
+                                    <TableCell>Discount (%)</TableCell>
                                     <TableCell>Total</TableCell>
                                     <TableCell>Actions</TableCell>
                                 </TableRow>
@@ -477,7 +559,25 @@ export const SellMedicine: React.FC = () => {
                                         </TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>₹{item.price}</TableCell>
-                                        <TableCell>₹{item.quantity * item.price}</TableCell>
+                                        <TableCell>
+                                            <TextField
+                                                type="number"
+                                                size="small"
+                                                value={item.discount === '' ? '' : item.discount}
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    if (val === '') {
+                                                        handleDiscountChange(index, '');
+                                                    } else {
+                                                        handleDiscountChange(index, Math.max(0, Math.min(100, Number(val))));
+                                                    }
+                                                }}
+                                                inputProps={{ min: 0, max: 100, style: { width: 60 } }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            ₹{(item.price * item.quantity * (1 - ((item.discount === '' ? 0 : item.discount || 0) / 100))).toFixed(2)}
+                                        </TableCell>
                                         <TableCell>
                                             <IconButton
                                                 color="error"
@@ -494,25 +594,40 @@ export const SellMedicine: React.FC = () => {
                     </TableContainer>
 
                     <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <TextField
-                            label="Customer Name (Optional)"
-                            value={customer}
-                            onChange={(e) => setCustomer(e.target.value)}
-                            size="small"
-                            sx={{ width: 300 }}
-                        />
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                            <TextField
+                                label="Customer Name (Optional)"
+                                value={customer}
+                                onChange={(e) => setCustomer(e.target.value)}
+                                size="small"
+                                sx={{ width: 200 }}
+                            />
+                            <FormControl size="small" sx={{ minWidth: 140 }}>
+                                <InputLabel id="mode-of-payment-label">Mode of Payment</InputLabel>
+                                <Select
+                                    labelId="mode-of-payment-label"
+                                    value={modeOfPayment}
+                                    label="Mode of Payment"
+                                    onChange={e => setModeOfPayment(e.target.value as 'Cash' | 'Card' | 'UPI')}
+                                >
+                                    <MenuItem value="Cash">Cash</MenuItem>
+                                    <MenuItem value="Card">Card</MenuItem>
+                                    <MenuItem value="UPI">UPI</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
                         <Box sx={{ textAlign: 'right' }}>
                             <Typography variant="h6" gutterBottom>
-                                Total: ₹{calculateTotal()}
+                                Total: ₹{calculateTotal().toFixed(2)}
                             </Typography>
                             <Button
                                 variant="contained"
                                 color="primary"
                                 startIcon={<ShoppingCartIcon />}
-                                onClick={handleSubmit}
+                                onClick={() => setShowSellModal(true)}
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? <CircularProgress size={24} /> : 'Complete Sale'}
+                                {isSubmitting ? <CircularProgress size={24} /> : 'Complete Sell'}
                             </Button>
                         </Box>
                     </Box>
@@ -546,6 +661,60 @@ export const SellMedicine: React.FC = () => {
                     Sale completed successfully!
                 </Alert>
             </Snackbar>
+
+            <Dialog open={showSellModal} onClose={() => setShowSellModal(false)} maxWidth="md" fullWidth>
+                <DialogTitle>Sell Receipt Preview</DialogTitle>
+                <DialogContent dividers>
+                    <div ref={receiptRef} style={{ padding: 16 }}>
+                        <div className="receipt-header">Medicine Shop Receipt</div>
+                        <div>Date: {format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+                        {customer && <div>Customer: {customer}</div>}
+                        <table className="receipt-table" style={{ width: '100%', marginTop: 12 }}>
+                            <thead>
+                                <tr>
+                                    <th>Medicine</th>
+                                    <th>Batch Expiry</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Discount (%)</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sellItems.map((item, idx) => {
+                                    const discount = item.discount === '' ? 0 : item.discount || 0;
+                                    const total = item.price * item.quantity * (1 - discount / 100);
+                                    return (
+                                        <tr key={idx}>
+                                            <td>{item.medicineName}</td>
+                                            <td>{formatExpiryText(item.expDate)}</td>
+                                            <td>{item.quantity}</td>
+                                            <td>₹{item.price}</td>
+                                            <td>{discount}</td>
+                                            <td>₹{total.toFixed(2)}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                        <div style={{ marginTop: 12, fontWeight: 'bold', fontSize: 16 }}>
+                            Grand Total: ₹{calculateTotal().toFixed(2)}
+                        </div>
+                    </div>
+                    {printError && <Alert severity="error" sx={{ mt: 2 }}>{printError}</Alert>}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => handleSell(true)} color="primary" variant="contained" disabled={isSubmitting}>
+                        Complete Sell and Print Receipt
+                    </Button>
+                    <Button onClick={() => handleSell(false)} color="success" variant="contained" disabled={isSubmitting}>
+                        Complete Sell without Print
+                    </Button>
+                    <Button onClick={() => setShowSellModal(false)} color="inherit" variant="outlined" disabled={isSubmitting}>
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }; 

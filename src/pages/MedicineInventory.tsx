@@ -35,7 +35,7 @@ const MedicineInventory: React.FC = () => {
     const fetchMedicines = async () => {
         setLoading(true);
         try {
-            const response: PageResponse<Medicine> = await medicineApi.getAllMedicines(page, rowsPerPage);
+            const response: PageResponse<Medicine> = await medicineApi.getMedicines(page, rowsPerPage);
             setMedicines(response.content);
             setTotalElements(response.totalElements);
         } catch (error) {

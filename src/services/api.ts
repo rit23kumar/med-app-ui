@@ -3,7 +3,9 @@ import { Medicine, MedicineWithStock, PageResponse, BatchMedicineResponse, Stock
 import { sell, CreateSellRequest } from '../types/sell';
 
 // const API_BASE_URL = '/api';
-const API_BASE_URL = 'http://localhost:8080/api';
+// const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 
 
 const api = axios.create({
@@ -14,8 +16,13 @@ const api = axios.create({
 });
 
 export const medicineApi = {
-    getAllMedicines: async (page: number = 0, size: number = 10): Promise<PageResponse<Medicine>> => {
+    getMedicines: async (page: number = 0, size: number = 10): Promise<PageResponse<Medicine>> => {
         const response = await api.get(`/medicines?page=${page}&size=${size}`);
+        return response.data;
+    },
+
+    getAllMedicines: async (): Promise<PageResponse<Medicine>> => {
+        const response = await api.get(`/medicines/all`);
         return response.data;
     },
 
