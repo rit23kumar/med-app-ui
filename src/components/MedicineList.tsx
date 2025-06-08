@@ -37,6 +37,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import debounce from 'lodash/debounce';
 import { FirstPage as FirstPageIcon, KeyboardArrowLeft, KeyboardArrowRight, LastPage as LastPageIcon } from '@mui/icons-material';
+import MedicineDetailsDialog from './MedicineDetailsDialog';
 
 interface PaginationActionsProps {
     count: number;
@@ -181,6 +182,8 @@ export const MedicineList: React.FC = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const [selectedMedicineId, setSelectedMedicineId] = useState<number | null>(null);
+    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
     const fetchMedicines = async (search?: string) => {
         try {
@@ -237,6 +240,11 @@ export const MedicineList: React.FC = () => {
     const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
+    };
+
+    const handleViewDetails = (medicineId: number) => {
+        setSelectedMedicineId(medicineId);
+        setDetailsDialogOpen(true);
     };
 
     return (
@@ -407,7 +415,7 @@ export const MedicineList: React.FC = () => {
                                         <IconButton
                                             size="small"
                                             color="primary"
-                                            onClick={() => navigate(`/medicines/${medicine.id}`)}
+                                            onClick={() => handleViewDetails(medicine.id!)}
                                             sx={{ 
                                                 '&:hover': {
                                                     backgroundColor: alpha(theme.palette.primary.main, 0.1)
@@ -490,7 +498,7 @@ export const MedicineList: React.FC = () => {
                                             <IconButton
                                                 size="medium"
                                                 color="primary"
-                                                onClick={() => navigate(`/medicines/${medicine.id}`)}
+                                                onClick={() => handleViewDetails(medicine.id!)}
                                                 sx={{ 
                                                     '&:hover': {
                                                         backgroundColor: alpha(theme.palette.primary.main, 0.1)
@@ -534,6 +542,17 @@ export const MedicineList: React.FC = () => {
                 }}
                 ActionsComponent={PaginationActions}
             />
+
+            {selectedMedicineId && (
+                <MedicineDetailsDialog
+                    open={detailsDialogOpen}
+                    onClose={() => {
+                        setDetailsDialogOpen(false);
+                        setSelectedMedicineId(null);
+                    }}
+                    medicineId={selectedMedicineId}
+                />
+            )}
         </Box>
     );
 }; 

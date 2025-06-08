@@ -360,6 +360,32 @@ const StockManagement: React.FC = () => {
                     </form>
                 </Paper>
 
+                {selectedMedicine && (
+                    <Paper sx={{ p: 3 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                            <Typography variant="h6">
+                                Stock History - {selectedMedicine.name} (Total Available: {totalAvailable})
+                            </Typography>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={includeFinished}
+                                        onChange={(e) => setIncludeFinished(e.target.checked)}
+                                        color="primary"
+                                        size="small"
+                                    />
+                                }
+                                label="Include Finished Batches"
+                            />
+                        </Box>
+                        <Divider sx={{ mb: 2 }} />
+                        <StockHistoryTable 
+                            stockHistory={stockHistory}
+                            loading={loadingHistory}
+                        />
+                    </Paper>
+                )}
+
                 {/* Bulk Upload Section */}
                 <Card sx={{ mb: 3 }}>
                     <CardContent>
@@ -406,33 +432,7 @@ const StockManagement: React.FC = () => {
                         )}
                     </CardContent>
                 </Card>
-
-                {selectedMedicine && (
-                    <Paper sx={{ p: 3 }}>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                            <Typography variant="h6">
-                                Stock History - {selectedMedicine.name} (Total Available: {totalAvailable})
-                            </Typography>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={includeFinished}
-                                        onChange={(e) => setIncludeFinished(e.target.checked)}
-                                        color="primary"
-                                        size="small"
-                                    />
-                                }
-                                label="Include Finished Batches"
-                            />
-                        </Box>
-                        <Divider sx={{ mb: 2 }} />
-                        <StockHistoryTable 
-                            stockHistory={stockHistory}
-                            loading={loadingHistory}
-                        />
-                    </Paper>
-                )}
-
+                
                 <Snackbar
                     open={notification.open}
                     autoHideDuration={6000}

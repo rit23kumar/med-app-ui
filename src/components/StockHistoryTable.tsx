@@ -26,9 +26,16 @@ const getRemainingDaysColor = (days: number): string => {
     return '#4caf50'; // green
 };
 
-const getRemainingDaysLabel = (days: number): string => {
-    if (days < 0) return `Expired ${Math.abs(days)} days ago`;
-    return `${days} days remaining`;
+const formatExpiryText = (expDate: string) => {
+    const today = new Date();
+    const expiryDate = new Date(expDate);
+    const remainingDays = differenceInDays(expiryDate, today);
+    const formattedDate = format(expiryDate, 'MMM dd, yyyy');
+    
+    if (remainingDays < 0) {
+        return `${formattedDate} (Expired ${Math.abs(remainingDays)} days ago)`;
+    }
+    return `${formattedDate} (${remainingDays} Days Remaining)`;
 };
 
 const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loading }) => {
@@ -83,7 +90,9 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                                 sx={entry.availableQuantity === 0 ? { opacity: 0.6 } : undefined}
                             >
                                 <TableCell>{entry.id}</TableCell>
-                                <TableCell>{format(expiryDate, 'dd/MM/yy')}</TableCell>
+                                <TableCell sx={{ color }}>
+                                    {formatExpiryText(entry.expDate)}
+                                </TableCell>
                                 <TableCell>{entry.quantity}</TableCell>
                                 <TableCell>{entry.availableQuantity}</TableCell>
                                 <TableCell>₹{entry.price.toFixed(2)}</TableCell>

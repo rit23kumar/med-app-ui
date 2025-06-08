@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, createBrowserRouter } from 'react-router-dom';
 import { MedicineList } from './components/MedicineList';
 import { SellMedicine } from './components/SellMedicine';
-import MedicineDetails from './pages/MedicineDetails';
 import { Layout } from './components/Layout';
 import StockManagement from './components/StockManagement';
 import SalesHistory from './pages/SalesHistory';
@@ -14,7 +13,6 @@ export const AppRoutes: React.FC = () => {
             <Routes>
                 <Route path="/" element={<SellMedicine />} />
                 <Route path="/medicine-inventory" element={<MedicineList />} />
-                <Route path="/medicines/:id" element={<MedicineDetails />} />
                 <Route path="/manage-stock" element={<StockManagement />} />
                 <Route path="/sales-history" element={<SalesHistory />} />
                 <Route path="/purchase-history" element={<PurchaseHistory />} />
