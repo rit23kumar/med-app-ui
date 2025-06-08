@@ -21,7 +21,7 @@ export const medicineApi = {
         return response.data;
     },
 
-    getAllMedicines: async (): Promise<PageResponse<Medicine>> => {
+    getAllMedicines: async (): Promise<Medicine[]> => {
         const response = await api.get(`/medicines/all`);
         return response.data;
     },

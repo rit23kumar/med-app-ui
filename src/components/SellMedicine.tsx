@@ -104,7 +104,7 @@ export const SellMedicine: React.FC = () => {
     const fetchMedicines = async () => {
         try {
             const response = await medicineApi.getAllMedicines();
-            setMedicines(response.content);
+            setMedicines(response || []);
         } catch (err) {
             setError('Failed to fetch medicines');
             console.error('Error fetching medicines:', err);

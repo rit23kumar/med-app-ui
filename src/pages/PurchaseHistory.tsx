@@ -38,7 +38,10 @@ const PurchaseHistory: React.FC = () => {
                 const formattedFromDate = format(fromDate, 'yyyy-MM-dd');
                 const formattedToDate = format(toDate, 'yyyy-MM-dd');
                 const data = await getPurchaseHistory(formattedFromDate, formattedToDate);
-                setPurchases(Array.isArray(data) ? data : []);
+                const sorted = Array.isArray(data)
+                    ? data.slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    : [];
+                setPurchases(sorted);
             } catch (err) {
                 setError('Failed to fetch purchase history');
                 console.error('Error fetching purchase history:', err);
@@ -66,12 +69,7 @@ const PurchaseHistory: React.FC = () => {
                             <DatePicker
                                 label="From Date"
                                 value={fromDate}
-                                onChange={(newValue) => {
-                                    setFromDate(newValue || today);
-                                    if (newValue && toDate) {
-                                        handleSearch();
-                                    }
-                                }}
+                                onChange={(newValue) => setFromDate(newValue || today)}
                                 format="dd/MM/yy"
                             />
                         </Grid>
@@ -79,12 +77,7 @@ const PurchaseHistory: React.FC = () => {
                             <DatePicker
                                 label="To Date"
                                 value={toDate}
-                                onChange={(newValue) => {
-                                    setToDate(newValue || today);
-                                    if (fromDate && newValue) {
-                                        handleSearch();
-                                    }
-                                }}
+                                onChange={(newValue) => setToDate(newValue || today)}
                                 format="dd/MM/yy"
                             />
                         </Grid>
