@@ -46,6 +46,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import { formatIndianCurrency } from '../utils/formatCurrency';
 
 interface sellItem {
     medicineId: number;
@@ -476,7 +477,7 @@ export const SellMedicine: React.FC = () => {
                                                         </Typography>
                                                     </TableCell>
                                                     <TableCell>{batch.availableQuantity}</TableCell>
-                                                    <TableCell>₹{batch.price}</TableCell>
+                                                    <TableCell>₹{formatIndianCurrency(batch.price)}</TableCell>
                                                     <TableCell>
                                                         {selectedBatches[batch.id] && (
                                                             <TextField
@@ -558,7 +559,7 @@ export const SellMedicine: React.FC = () => {
                                             </Typography>
                                         </TableCell>
                                         <TableCell>{item.quantity}</TableCell>
-                                        <TableCell>₹{item.price}</TableCell>
+                                        <TableCell>₹{formatIndianCurrency(item.price)}</TableCell>
                                         <TableCell>
                                             <TextField
                                                 type="number"
@@ -576,7 +577,7 @@ export const SellMedicine: React.FC = () => {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            ₹{(item.price * item.quantity * (1 - ((item.discount === '' ? 0 : item.discount || 0) / 100))).toFixed(2)}
+                                            ₹{formatIndianCurrency(item.price * item.quantity * (1 - ((item.discount === '' ? 0 : item.discount || 0) / 100)))}
                                         </TableCell>
                                         <TableCell>
                                             <IconButton
@@ -593,50 +594,63 @@ export const SellMedicine: React.FC = () => {
                         </Table>
                     </TableContainer>
 
-                    <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                            <TextField
-                                label="Customer Name (Optional)"
-                                value={customer}
-                                onChange={(e) => setCustomer(e.target.value)}
-                                size="small"
-                                sx={{ width: 200 }}
-                            />
-                            <FormControl size="small" sx={{ minWidth: 140 }}>
-                                <InputLabel id="mode-of-payment-label">Mode of Payment</InputLabel>
-                                <Select
-                                    labelId="mode-of-payment-label"
-                                    value={modeOfPayment}
-                                    label="Mode of Payment"
-                                    onChange={e => setModeOfPayment(e.target.value as 'Cash' | 'Card' | 'UPI')}
-                                >
-                                    <MenuItem value="Cash">Cash</MenuItem>
-                                    <MenuItem value="Card">Card</MenuItem>
-                                    <MenuItem value="UPI">UPI</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box sx={{ textAlign: 'right' }}>
-                            <Typography variant="h6" gutterBottom>
-                                Total: ₹{calculateTotal().toFixed(2)}
-                            </Typography>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                startIcon={<ShoppingCartIcon />}
-                                onClick={() => setShowSellModal(true)}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? <CircularProgress size={24} /> : 'Complete Sell'}
-                            </Button>
-                        </Box>
+                    <Box sx={{ mt: 3 }}>
+                        <Grid container spacing={2} alignItems="center">
+                            {/* Left side: Customer and Payment Mode */}
+                            <Grid item xs={12} sm={7} md={7}>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            label="Customer Name (Optional)"
+                                            value={customer}
+                                            onChange={(e) => setCustomer(e.target.value)}
+                                            size="small"
+                                            fullWidth
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <FormControl size="small" fullWidth>
+                                            <InputLabel id="mode-of-payment-label">Mode of Payment</InputLabel>
+                                            <Select
+                                                labelId="mode-of-payment-label"
+                                                value={modeOfPayment}
+                                                label="Mode of Payment"
+                                                onChange={e => setModeOfPayment(e.target.value as 'Cash' | 'Card' | 'UPI')}
+                                            >
+                                                <MenuItem value="Cash">Cash</MenuItem>
+                                                <MenuItem value="UPI">UPI</MenuItem>
+                                                <MenuItem value="Card" disabled>Card</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+
+                            {/* Right side: Total and Complete Sell Button */}
+                            <Grid item xs={12} sm={5} md={5}>
+                                <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, mt: { xs: 2, sm: 0 } }}>
+                                    <Typography variant="h6" gutterBottom>
+                                        Total: ₹{formatIndianCurrency(calculateTotal())}
+                                    </Typography>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        startIcon={<ShoppingCartIcon />}
+                                        onClick={() => setShowSellModal(true)}
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? <CircularProgress size={24} /> : 'Complete Sell'}
+                                    </Button>
+                                </Box>
+                            </Grid>
+                        </Grid>
                     </Box>
                 </Paper>
             )}
 
             <Snackbar
                 open={!!error}
-                autoHideDuration={6000}
+                autoHideDuration={30000}
                 onClose={() => setError(null)}
             >
                 <Alert
@@ -650,7 +664,7 @@ export const SellMedicine: React.FC = () => {
 
             <Snackbar
                 open={showSuccess}
-                autoHideDuration={6000}
+                autoHideDuration={30000}
                 onClose={() => setShowSuccess(false)}
             >
                 <Alert
@@ -689,16 +703,16 @@ export const SellMedicine: React.FC = () => {
                                             <td>{item.medicineName}</td>
                                             <td>{formatExpiryText(item.expDate)}</td>
                                             <td>{item.quantity}</td>
-                                            <td>₹{item.price}</td>
+                                            <td>₹{formatIndianCurrency(item.price)}</td>
                                             <td>{discount}</td>
-                                            <td>₹{total.toFixed(2)}</td>
+                                            <td>₹{formatIndianCurrency(total)}</td>
                                         </tr>
                                     );
                                 })}
                             </tbody>
                         </table>
                         <div style={{ marginTop: 12, fontWeight: 'bold', fontSize: 16 }}>
-                            Grand Total: ₹{calculateTotal().toFixed(2)}
+                            Grand Total: ₹{formatIndianCurrency(calculateTotal())}
                         </div>
                     </div>
                     {printError && <Alert severity="error" sx={{ mt: 2 }}>{printError}</Alert>}

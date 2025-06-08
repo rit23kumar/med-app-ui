@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { StockHistory } from '../types/medicine';
 import { format, differenceInDays } from 'date-fns';
+import { formatIndianCurrency } from '../utils/formatCurrency';
 
 interface StockHistoryTableProps {
     stockHistory: StockHistory[];
@@ -95,7 +96,7 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                                 </TableCell>
                                 <TableCell>{entry.quantity}</TableCell>
                                 <TableCell>{entry.availableQuantity}</TableCell>
-                                <TableCell>₹{entry.price.toFixed(2)}</TableCell>
+                                <TableCell>₹{formatIndianCurrency(entry.price)}</TableCell>
                             </TableRow>
                         );
                     })}

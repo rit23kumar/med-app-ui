@@ -18,6 +18,7 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { format, isSameDay } from 'date-fns';
 import { sell } from '../types/sell';
+import { formatIndianCurrency } from '../utils/formatCurrency';
 
 interface SalesReportDialogProps {
     open: boolean;
@@ -91,7 +92,7 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                             <Paper sx={cardStyles(isDark ? theme.palette.grey[800] : '#f5f5f5')}>
                                 <AttachMoneyIcon color="success" fontSize="medium" />
                                 <Typography variant="subtitle1" gutterBottom>
-                                    Total Sales: ₹{totalSales.toFixed(2)}
+                                    Total Sales: ₹{formatIndianCurrency(totalSales)}
                                 </Typography>
                             </Paper>
                         </Grid>
@@ -99,7 +100,7 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                             <Paper sx={cardStyles(isDark ? theme.palette.info.dark : '#e3f2fd')}>
                                 <PaymentsIcon color="primary" fontSize="medium" />
                                 <Typography variant="subtitle1" gutterBottom>
-                                    Cash Sales: ₹{cashTotal.toFixed(2)}
+                                    Cash Sales: ₹{formatIndianCurrency(cashTotal)}
                                 </Typography>
                             </Paper>
                         </Grid>
@@ -107,7 +108,7 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                             <Paper sx={cardStyles(isDark ? theme.palette.success.dark : '#e8f5e9')}>
                                 <QrCodeIcon color="success" fontSize="medium" />
                                 <Typography variant="subtitle1" gutterBottom>
-                                    UPI Sales: ₹{upiTotal.toFixed(2)}
+                                    UPI Sales: ₹{formatIndianCurrency(upiTotal)}
                                 </Typography>
                             </Paper>
                         </Grid>
@@ -115,7 +116,7 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                             <Paper sx={cardStyles(isDark ? theme.palette.warning.dark : '#fff3e0')}>
                                 <CreditCardIcon color="warning" fontSize="medium" />
                                 <Typography variant="subtitle1" gutterBottom>
-                                    Card Sales: ₹{cardTotal.toFixed(2)}
+                                    Card Sales: ₹{formatIndianCurrency(cardTotal)}
                                 </Typography>
                             </Paper>
                         </Grid>
@@ -124,7 +125,7 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                                 <Paper sx={cardStyles(isDark ? theme.palette.secondary.dark : '#fce4ec')}>
                                     <AccountBalanceWalletIcon color="secondary" fontSize="medium" />
                                     <Typography variant="subtitle1" gutterBottom>
-                                        Other Sales: ₹{otherTotal.toFixed(2)}
+                                        Other Sales: ₹{formatIndianCurrency(otherTotal)}
                                     </Typography>
                                 </Paper>
                             </Grid>

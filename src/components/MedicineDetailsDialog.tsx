@@ -19,6 +19,8 @@ import { Medicine, StockHistory } from '../types/medicine';
 import { medicineApi } from '../services/api';
 import StockHistoryTable from './StockHistoryTable';
 import CloseIcon from '@mui/icons-material/Close';
+import { format } from 'date-fns';
+import { formatIndianCurrency } from '../utils/formatCurrency';
 
 interface MedicineDetailsDialogProps {
     open: boolean;
@@ -156,8 +158,8 @@ const MedicineDetailsDialog: React.FC<MedicineDetailsDialogProps> = ({ open, onC
                                                     <Typography variant="body1">
                                                         Total Quantity: {currentStock.totalQuantity}
                                                     </Typography>
-                                                    <Typography variant="body1">
-                                                        Latest Price: ₹{currentStock.latestPrice.toFixed(2)}
+                                                    <Typography variant="subtitle1">
+                                                        Latest Price: ₹{formatIndianCurrency(currentStock.latestPrice)}
                                                     </Typography>
                                                 </Box>
                                             </Grid>

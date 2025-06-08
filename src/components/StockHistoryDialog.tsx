@@ -18,6 +18,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { StockHistory } from '../types/medicine';
 import { format } from 'date-fns';
+import { formatIndianCurrency } from '../utils/formatCurrency';
 
 interface StockHistoryDialogProps {
     open: boolean;
@@ -82,7 +83,7 @@ const StockHistoryDialog: React.FC<StockHistoryDialogProps> = ({
                                         {format(new Date(entry.expDate), 'MMM dd, yyyy')}
                                     </TableCell>
                                     <TableCell align="right">{entry.quantity}</TableCell>
-                                    <TableCell align="right">₹{entry.price.toFixed(2)}</TableCell>
+                                    <TableCell align="right">₹{formatIndianCurrency(entry.price)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

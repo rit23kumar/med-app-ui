@@ -19,6 +19,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Medicine, PageResponse, StockHistory } from '../types/medicine';
 import { medicineApi } from '../services/api';
 import StockHistoryDialog from '../components/StockHistoryDialog';
+import { formatIndianCurrency } from '../utils/formatCurrency';
 
 const MedicineInventory: React.FC = () => {
     const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -125,7 +126,7 @@ const MedicineInventory: React.FC = () => {
                                 <TableRow key={medicine.id}>
                                     <TableCell>{medicine.name}</TableCell>
                                     <TableCell>{medicine.stock?.quantity || 0}</TableCell>
-                                    <TableCell>₹{medicine.stock?.price || 0}</TableCell>
+                                    <TableCell>₹{formatIndianCurrency(medicine.stock?.price || 0)}</TableCell>
                                     <TableCell>{medicine.stock?.expDate || 'N/A'}</TableCell>
                                     <TableCell>
                                         <IconButton

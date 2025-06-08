@@ -16,6 +16,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Medicine } from '../types/medicine';
 import { medicineApi } from '../services/api';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { formatIndianCurrency } from '../utils/formatCurrency';
 
 export const MedicineDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -108,7 +109,7 @@ export const MedicineDetail: React.FC = () => {
                                             Quantity: {medicine.stock?.quantity || 0}
                                         </Typography>
                                         <Typography variant="body2">
-                                            Price: ₹{medicine.stock?.price || 0}
+                                            Price: ₹{formatIndianCurrency(medicine.stock?.price || 0)}
                                         </Typography>
                                         <Typography variant="body2">
                                             Expiry Date: {medicine.stock?.expDate || 'N/A'}

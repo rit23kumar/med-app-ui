@@ -15,7 +15,8 @@ import {
     Alert,
     CircularProgress,
     Switch,
-    FormControlLabel
+    FormControlLabel,
+    Snackbar
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -24,6 +25,7 @@ import { format } from 'date-fns';
 import { getSalesHistory } from '../services/historyService';
 import { sell, sellItem } from '../types/sell';
 import SalesReportDialog from '../components/SalesReportDialog';
+import { formatIndianCurrency } from '../utils/formatCurrency';
 
 const SalesHistory: React.FC = () => {
     const today = new Date();
@@ -158,11 +160,21 @@ const SalesHistory: React.FC = () => {
                     </Grid>
                 </Paper>
 
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
+                {/* Error Snackbar */}
+                <Snackbar
+                    open={!!error}
+                    autoHideDuration={30000}
+                    onClose={() => setError(null)}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                >
+                    <Alert
+                        onClose={() => setError(null)}
+                        severity="error"
+                        sx={{ width: '100%' }}
+                    >
                         {error}
                     </Alert>
-                )}
+                </Snackbar>
 
                 <TableContainer component={Paper}>
                     <Table>
@@ -193,7 +205,7 @@ const SalesHistory: React.FC = () => {
                                     <TableRow key={sale.id}>
                                         <TableCell>{format(new Date(sale.date), 'dd/MM/yy HH:mm')}</TableCell>
                                         <TableCell>{sale.customer || 'N/A'}</TableCell>
-                                        <TableCell>₹{sale.totalAmount.toFixed(2)}</TableCell>
+                                        <TableCell>₹{formatIndianCurrency(sale.totalAmount)}</TableCell>
                                         <TableCell>{sale.modeOfPayment || 'N/A'}</TableCell>
                                         <TableCell>
                                             {(sale.items as sellItem[]).map((item: sellItem) => (
@@ -211,16 +223,16 @@ const SalesHistory: React.FC = () => {
                                                     </span>{' '}
                                                     —{' '}
                                                     <span style={{ color: '#3498db' }}>
-                                                        {item.quantity} × ₹{item.price.toFixed(2)}
+                                                        {item.quantity} × ₹{formatIndianCurrency(item.price)}
                                                     </span>{' '}
                                                     →
                                                     <span style={{ fontWeight: '500', color: '#2ecc71' }}>
                                                         ₹
-                                                        {(
+                                                        {formatIndianCurrency(
                                                             item.quantity *
                                                             item.price *
                                                             (1 - (item.discount ?? 0) / 100)
-                                                        ).toFixed(2)}
+                                                        )}
                                                     </span>{' '}
                                                     {item.discount ? (
                                                         <span style={{ color: '#e74c3c' }}>
