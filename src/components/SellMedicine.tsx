@@ -523,15 +523,6 @@ export const SellMedicine: React.FC = () => {
                     <Grid item xs={12}>
                         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                             <Button
-                                variant="outlined"
-                                onClick={() => {
-                                    setSelectedMedicine(null);
-                                    setSelectedBatches({});
-                                }}
-                            >
-                                Reset
-                            </Button>
-                            <Button
                                 variant="contained"
                                 startIcon={<AddIcon />}
                                 onClick={handleAddItem}
@@ -698,49 +689,87 @@ export const SellMedicine: React.FC = () => {
                 <DialogTitle>Sell Receipt Preview</DialogTitle>
                 <DialogContent dividers>
                     <div ref={receiptRef} style={{ padding: 16 }}>
-                        <div className="receipt-header">Medicine Shop Receipt</div>
-                        <div>Date: {format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
-                        {customer && <div>Customer: {customer}</div>}
-                        <table className="receipt-table" style={{ width: '100%', marginTop: 12 }}>
+                        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', color: '#00A86B' }}>
+                                Dev Medical
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                Gola Road, Mahua, Bihar - 844122
+                            </Typography>
+                        </div>
+
+                        <Grid container spacing={0} sx={{ border: '1px solid #ccc', borderBottom: 0 }}>
+                            <Grid item xs={7} sx={{ borderRight: '1px solid #ccc', p: 1 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>BILL TO</Typography>
+                                {customer && <Typography variant="body2">{customer}</Typography>}                                
+                            </Grid>
+                            <Grid item xs={5} sx={{ p: 1 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice No</Typography>
+                                    <Typography variant="body2">XXXX</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice Date</Typography>
+                                    <Typography variant="body2">{format(new Date(), 'dd MMMM yyyy')}</Typography>
+                                </Box>
+                            </Grid>
+                        </Grid>
+
+                        <table className="receipt-table" style={{ width: '100%', borderCollapse: 'collapse', border: `1px solid ${theme.palette.divider}` }}>
                             <thead>
-                                <tr>
-                                    <th>Medicine</th>
-                                    <th>Batch Expiry</th>
-                                    <th>Qty</th>
-                                    <th>Price</th>
-                                    <th>Discount (%)</th>
-                                    <th>Total</th>
+                                <tr style={{ backgroundColor: alpha(theme.palette.primary.light, 0.1) }}>
+                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Sr. No.</th>
+                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Items</th>
+                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Quantity</th>
+                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Price / Unit</th>
+                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Tax</th>
+                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {sellItems.map((item, idx) => {
-                                    const discount = item.discount === '' ? 0 : item.discount || 0;
-                                    const total = item.price * item.quantity * (1 - discount / 100);
+                                    const discountAmount = item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100);
+                                    const itemTotal = (item.price * item.quantity) - discountAmount;
                                     return (
                                         <tr key={idx}>
-                                            <td>{item.medicineName}</td>
-                                            <td>{formatExpiryText(item.expDate)}</td>
-                                            <td>{item.quantity}</td>
-                                            <td>₹{formatIndianCurrency(item.price)}</td>
-                                            <td>{discount}</td>
-                                            <td>₹{formatIndianCurrency(total)}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>{idx + 1}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>{item.medicineName}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>{item.quantity}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>₹{formatIndianCurrency(item.price)}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>Rs. 0.00 (0%)</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>₹{formatIndianCurrency(itemTotal)}</td>
                                         </tr>
                                     );
                                 })}
+                                {
+                                    sellItems.some(item => (item.discount || 0) > 0) && (
+                                        <tr style={{ backgroundColor: alpha(theme.palette.warning.light, 0.1) }}>
+                                            <td colSpan={5} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'right', fontWeight: 'bold' }}>Discount</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>
+                                                ₹{formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}
+                                            </td>
+                                        </tr>
+                                    )
+                                }
+                                <tr style={{ backgroundColor: alpha(theme.palette.success.light, 0.1) }}>
+                                    <td colSpan={2} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>Total</td>
+                                    <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>
+                                        {sellItems.reduce((sum, item) => sum + item.quantity, 0)}
+                                    </td>
+                                    <td colSpan={2} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold', textAlign: 'right' }}></td>
+                                    <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>₹{formatIndianCurrency(calculateTotal())}</td>
+                                </tr>
                             </tbody>
                         </table>
-                        <div style={{ marginTop: 12, fontWeight: 'bold', fontSize: 16 }}>
-                            Grand Total: ₹{formatIndianCurrency(calculateTotal())}
-                        </div>
                     </div>
                     {printError && <Alert severity="error" sx={{ mt: 2 }}>{printError}</Alert>}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => handleSell(true)} color="primary" variant="contained" disabled={isSubmitting}>
-                        Complete Sell and Print Receipt
+                        Complete With Print
                     </Button>
                     <Button onClick={() => handleSell(false)} color="success" variant="contained" disabled={isSubmitting}>
-                        Complete Sell without Print
+                        Complete (No Print)
                     </Button>
                     <Button onClick={() => setShowSellModal(false)} color="inherit" variant="outlined" disabled={isSubmitting}>
                         Cancel
