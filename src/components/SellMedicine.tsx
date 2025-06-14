@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Box,
     Button,
@@ -88,6 +88,8 @@ export const SellMedicine: React.FC = () => {
     const receiptRef = React.useRef<HTMLDivElement>(null);
     const quantityRefs = React.useRef<{ [batchId: number]: HTMLInputElement | null }>({});
     const [modeOfPayment, setModeOfPayment] = useState<'Cash' | 'Card' | 'UPI'>('Cash');
+
+    const medicineAutocompleteRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         fetchMedicines();
@@ -288,6 +290,11 @@ export const SellMedicine: React.FC = () => {
         setSelectedMedicine(null);
         setSelectedBatches({});
         setFormErrors({});
+
+        // Set focus back to medicine autocomplete
+        setTimeout(() => {
+            medicineAutocompleteRef.current?.focus();
+        }, 0);
     };
 
     const handleRemoveItem = (index: number) => {
@@ -430,6 +437,7 @@ export const SellMedicine: React.FC = () => {
                                     error={!!formErrors.medicine}
                                     helperText={formErrors.medicine}
                                     autoComplete="off"
+                                    inputRef={medicineAutocompleteRef}
                                 />
                             )}
                         />
@@ -465,6 +473,11 @@ export const SellMedicine: React.FC = () => {
                                                         <Checkbox
                                                             checked={!!selectedBatches[batch.id]}
                                                             onChange={() => handleBatchToggle(batch)}
+                                                            onKeyPress={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    handleBatchToggle(batch);
+                                                                }
+                                                            }}
                                                         />
                                                     </TableCell>
                                                     <TableCell>
@@ -485,6 +498,11 @@ export const SellMedicine: React.FC = () => {
                                                                 size="small"
                                                                 value={selectedBatches[batch.id].quantity || ''}
                                                                 onChange={(e) => handleQuantityChange(batch.id, parseInt(e.target.value) || 0)}
+                                                                onKeyPress={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        handleAddItem();
+                                                                    }
+                                                                }}
                                                                 error={!!formErrors.quantities?.[batch.id]}
                                                                 helperText={formErrors.quantities?.[batch.id]}
                                                                 inputProps={{ min: 1, max: batch.availableQuantity }}

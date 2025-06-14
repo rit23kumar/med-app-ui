@@ -159,7 +159,7 @@ const MedicineDetailsDialog: React.FC<MedicineDetailsDialogProps> = ({ open, onC
                                                         Total Quantity: {currentStock.totalQuantity}
                                                     </Typography>
                                                     <Typography variant="subtitle1">
-                                                        Latest Price: ₹{formatIndianCurrency(currentStock.latestPrice)}
+                                                        Latest Unit Price: ₹{formatIndianCurrency(currentStock.latestPrice)}
                                                     </Typography>
                                                 </Box>
                                             </Grid>

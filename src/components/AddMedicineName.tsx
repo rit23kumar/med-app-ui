@@ -21,6 +21,7 @@ export const AddMedicineName: React.FC<AddMedicineNameProps> = ({ onSuccess }) =
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,18 +30,21 @@ export const AddMedicineName: React.FC<AddMedicineNameProps> = ({ onSuccess }) =
         setLoading(true);
         setError(null);
         setSuccess(false);
+        setSuccessMessage('');
 
         try {
             await medicineApi.addMedicine({
                 name: medicineName.trim()
             });
             setSuccess(true);
+            setSuccessMessage(`${medicineName.trim()} added successfully!`);
             setMedicineName('');
             if (onSuccess) {
                 onSuccess();
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to add medicine');
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to add medicine';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -86,7 +90,7 @@ export const AddMedicineName: React.FC<AddMedicineNameProps> = ({ onSuccess }) =
                         </IconButton>
                     }
                 >
-                    Medicine added successfully!
+                    {successMessage}
                 </Alert>
             )}
 

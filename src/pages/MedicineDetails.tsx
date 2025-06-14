@@ -143,7 +143,7 @@ const MedicineDetails: React.FC = () => {
                                         Total Quantity: {currentStock.quantity}
                                     </Typography>
                                     <Typography variant="body1">
-                                        Latest Price: ₹{currentStock.price.toFixed(2)}
+                                        Latest Unit Price: ₹{currentStock.price.toFixed(2)}
                                     </Typography>
                                 </>
                             ) : (

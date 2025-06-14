@@ -34,8 +34,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import { formatIndianCurrency } from "../utils/formatCurrency";
 
-const timeZone = "Asia/Kolkata";
-
 const StockManagement: React.FC = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
@@ -82,8 +80,8 @@ const StockManagement: React.FC = () => {
 
   const loadMedicines = async () => {
     try {
-      const response = await medicineApi.getMedicines(0, 100);
-      setMedicines(response.content);
+      const response = await medicineApi.getAllMedicines();
+      setMedicines(response);
     } catch (error) {
       console.error("Error loading medicines:", error);
       showNotification("Error loading medicines", "error");
@@ -225,16 +223,17 @@ const StockManagement: React.FC = () => {
                 };
               }
               let searchResult = await medicineApi.searchMedicines(
-                entry.medicineName,
+                entry.medicineName.trim(),
                 "contains"
               );
               let medicine = searchResult.find(
-                (m) => m.name.toLowerCase() === entry.medicineName.toLowerCase()
+                (m) =>
+                  m.name.toLowerCase() === entry.medicineName.trim().toLowerCase()
               );
               let isNew = false;
               if (!medicine) {
                 medicine = await medicineApi.addMedicine({
-                  name: entry.medicineName,
+                  name: entry.medicineName.trim(),
                 });
                 isNew = true;
               }
@@ -310,14 +309,7 @@ const StockManagement: React.FC = () => {
         <Typography variant="h4" gutterBottom>
           Manage Stocks
         </Typography>
-        {/* Quick Add Medicine Section */}
-        <AddMedicineName
-          onSuccess={() => {
-            showNotification("Medicine added successfully", "success");
-            loadMedicines();
-          }}
-        />
-
+        
         {/* Add Medicine Stock Section */}
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h5" gutterBottom>
@@ -427,6 +419,14 @@ const StockManagement: React.FC = () => {
             </Paper>
           )}
         </Paper>
+
+        {/* Quick Add Medicine Section */}
+        <AddMedicineName
+          onSuccess={() => {
+            showNotification("Medicine added successfully", "success");
+            loadMedicines();
+          }}
+        />
 
         {/* Bulk Upload Section */}
         <Card sx={{ mb: 3 }}>
@@ -550,6 +550,22 @@ const StockManagement: React.FC = () => {
                     <ul>
                       {bulkResultModal.results
                         .filter((r) => r.success && !r.stock && r.isNew)
+                        .map((r, idx) => (
+                          <li key={idx}>{r.name}</li>
+                        ))}
+                    </ul>
+                  </Box>
+                )}
+                {bulkResultModal.results.filter(
+                  (r) => r.success && !r.stock && !r.isNew
+                ).length > 0 && (
+                  <Box mb={2}>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      Existing Medicines (No Stock Update):
+                    </Typography>
+                    <ul>
+                      {bulkResultModal.results
+                        .filter((r) => r.success && !r.stock && !r.isNew)
                         .map((r, idx) => (
                           <li key={idx}>{r.name}</li>
                         ))}

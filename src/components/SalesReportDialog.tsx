@@ -75,15 +75,15 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
 
     const formatDateRange = () => {
         if (isSameDay(fromDate, toDate)) {
-            return format(fromDate, 'dd/MM/yy');
+            return format(fromDate, 'MMMM d, yyyy');
         }
-        return `${format(fromDate, 'dd/MM/yy')} to ${format(toDate, 'dd/MM/yy')}`;
+        return `${format(fromDate, 'MMMM d, yyyy')} to ${format(toDate, 'MMMM d, yyyy')}`;
     };
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle>
-                Sales Report for {formatDateRange()}
+                Sales Report for <span style={{ fontWeight: 'bold', color: '#2ecc71' }}>{formatDateRange()}</span>
             </DialogTitle>
             <DialogContent>
                 <Box sx={{ mt: 2 }}>
