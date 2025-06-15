@@ -92,7 +92,7 @@ const SalesHistory: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Sells History
+          Sales History
         </Typography>
 
         <Paper sx={{ pl: 2, pb: 2, pt: 1, mb: 2, pr: 2 }}>

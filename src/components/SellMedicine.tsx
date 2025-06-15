@@ -366,39 +366,53 @@ export const SellMedicine: React.FC = () => {
                     <title>Receipt</title>
                     <style>
                         @media print {
-                            @page { size: A5 portrait; margin: 10mm; }
-                            body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; font-size: 10pt; color: #333; }
+                            @page {
+                                size: A5 portrait;
+                                margin: 0; /* Attempt to remove default margins */
+                                /* Optional: Hide browser-generated headers/footers (browser-dependent) */
+                                marks: none;
+                            }
+                            html, body {
+                                margin: 0 !important;
+                                padding: 0 !important;
+                                -webkit-print-color-adjust: exact; /* Ensures background colors are printed */
+                                print-color-adjust: exact;
+                            }
+                            body { font-family: 'Arial', sans-serif; font-size: 8pt; color: #333; }
                             .container { padding: 10mm; }
-                            .header-section { text-align: center; margin-bottom: 20px; }
-                            .header-section h1 { color: #00A86B; font-size: 18pt; margin: 0; }
-                            .header-section p { margin: 2px 0; font-size: 9pt; color: #555; }
+                            .header-section { margin-bottom: 20px; }
+                            .header-section h1 { color: #00A86B; font-size: 14pt; margin: 0; }
+                            .header-section p { margin: 2px 0; font-size: 7pt; color: #555; }
+                            .invoice-label { text-align: center; font-size: 10pt; }
                             .details-grid { display: flex; border: 1px solid #ccc; margin-bottom: 15px; }
                             .details-grid > div { padding: 8px; flex: 1; }
                             .details-grid .bill-to { border-right: 1px solid #ccc; flex: 0.6; }
                             .details-grid .invoice-info { flex: 0.4; }
-                            .details-grid p { margin: 2px 0; font-size: 9pt; }
+                            .details-grid p { margin: 2px 0; font-size: 7pt; }
                             .details-grid strong { font-weight: bold; }
                             .invoice-table { width: 100%; border-collapse: collapse; border: 1px solid #ccc; margin-bottom: 15px; }
-                            .invoice-table th, .invoice-table td { border: 1px solid #ccc; padding: 6px; text-align: left; font-size: 9pt; }
+                            .invoice-table th, .invoice-table td { border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 7pt; }
                             .invoice-table thead tr { background-color: #e0ffe0; }
-                            .invoice-table tfoot tr.discount-row { background-color: #f0f0f0; }
+                            .invoice-table tfoot tr.discount-row { background-color: #e0ffe0; }
                             .invoice-table tfoot tr.total-row { background-color: #aaffaa; }
                             .text-right { text-align: right; }
                             .font-bold { font-weight: bold; }
+                            .border-bottom { border-bottom: 1px solid #ccc; }
                         }
                     </style>
                 </head>
                 <body>
                     <div class="container">
                         <div class="header-section">
-                            <h1>Dev Medical</h1>
+                            <h1>Dev Medical Hall</h1>
                             <p>Gola Road, Mahua, Bihar - 844122</p>
+                            <p class="invoice-label">TAX INVOICE</p>
                         </div>
 
                         <div class="details-grid">
                             <div class="bill-to">
-                                <p><strong>BILL TO</strong></p>
-                                ${customer ? `<p>${customer}</p>` : ''}
+                                <p><strong>Customer Name</strong></p>
+                                ${customer ? `<p>${customer}</p>` : 'ANONYMOUS'}
                             </div>
                             <div class="invoice-info">
                                 <p><strong>Invoice No:</strong> XXXX</p>
@@ -408,11 +422,11 @@ export const SellMedicine: React.FC = () => {
 
                         <table class="invoice-table">
                             <thead>
-                                <tr>
-                                    <th>Sr. No.</th>
+                                <tr class="border-bottom">
+                                    <th>No.</th>
                                     <th>Items</th>
                                     <th>Quantity</th>
-                                    <th>Price / Unit</th>
+                                    <th>Price/Unit</th>
                                     <th>Tax</th>
                                     <th>Amount</th>
                                 </tr>
@@ -424,27 +438,25 @@ export const SellMedicine: React.FC = () => {
                                     return `
                                         <tr>
                                             <td>${idx + 1}</td>
-                                            <td>${item.medicineName}</td>
+                                            <td style="width: 40%; font-family: 'Courier New';">${item.medicineName}</td>
                                             <td>${item.quantity}</td>
                                             <td>₹${formatIndianCurrency(item.price)}</td>
-                                            <td>Rs. 0.00 (0%)</td>
+                                            <td>₹0 (0%)</td>
                                             <td>₹${formatIndianCurrency(itemTotal)}</td>
                                         </tr>
                                     `;
                                 }).join('')}
                                 ${sellItems.some(item => (item.discount || 0) > 0) ? `
+                                    <tr class="border-bottom"></tr>
                                     <tr class="discount-row">
-                                        <td colspan="5" class="text-right font-bold">Discount</td>
-                                        <td class="font-bold">₹${formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}</td>
+                                        <td colspan="5" class="text-right font-bold">Discount: 
+                                        <span class="font-bold">₹${formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}</span></td>
                                     </tr>
                                 ` : ''}
                             </tbody>
                             <tfoot>
                                 <tr class="total-row">
-                                    <td colspan="2" class="font-bold">Total</td>
-                                    <td class="font-bold">${sellItems.reduce((sum, item) => sum + item.quantity, 0)}</td>
-                                    <td colspan="2" class="text-right font-bold"></td>
-                                    <td class="font-bold">₹${formatIndianCurrency(calculateTotal())}</td>
+                                    <td colspan="2" class="text-right font-bold">Total    ₹${formatIndianCurrency(calculateTotal())}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -485,7 +497,7 @@ export const SellMedicine: React.FC = () => {
     return (
         <Box sx={{ p: 3 }}>
             <Typography variant="h4" gutterBottom>
-                Sell Medicine
+                Sale Medicine
             </Typography>
 
             {/* Add Item Section */}
@@ -758,18 +770,9 @@ export const SellMedicine: React.FC = () => {
             </Snackbar>
 
             <Dialog open={showSellModal} onClose={() => setShowSellModal(false)} maxWidth="md" fullWidth>
-                <DialogTitle>Sell Receipt Preview</DialogTitle>
+                <DialogTitle>Sell Review</DialogTitle>
                 <DialogContent dividers>
-                    <div ref={receiptRef} style={{ padding: 16 }}>
-                        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', color: '#00A86B' }}>
-                                Dev Medical
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                Gola Road, Mahua, Bihar - 844122
-                            </Typography>
-                        </div>
-
+                    <div ref={receiptRef}>
                         <Grid container spacing={0} sx={{ border: '1px solid #ccc', borderBottom: 0 }}>
                             <Grid item xs={7} sx={{ borderRight: '1px solid #ccc', p: 1 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>BILL TO</Typography>
@@ -777,11 +780,11 @@ export const SellMedicine: React.FC = () => {
                             </Grid>
                             <Grid item xs={5} sx={{ p: 1 }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice No</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice No:</Typography>
                                     <Typography variant="body2">XXXX</Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice Date</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Date:</Typography>
                                     <Typography variant="body2">{format(new Date(), 'dd MMMM yyyy')}</Typography>
                                 </Box>
                             </Grid>
@@ -790,8 +793,8 @@ export const SellMedicine: React.FC = () => {
                         <table className="receipt-table" style={{ width: '100%', borderCollapse: 'collapse', border: `1px solid ${theme.palette.divider}` }}>
                             <thead>
                                 <tr style={{ backgroundColor: alpha(theme.palette.primary.light, 0.1) }}>
-                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Sr. No.</th>
-                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Items</th>
+                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>No.</th>
+                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left', width: '40%' }}>Items</th>
                                     <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Quantity</th>
                                     <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Price / Unit</th>
                                     <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Tax</th>
@@ -805,10 +808,10 @@ export const SellMedicine: React.FC = () => {
                                     return (
                                         <tr key={idx}>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>{idx + 1}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>{item.medicineName}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', width: '40%', fontFamily: 'Courier New' }}>{item.medicineName}</td>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>{item.quantity}</td>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>₹{formatIndianCurrency(item.price)}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>Rs. 0.00 (0%)</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>₹ 0 (0%)</td>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>₹{formatIndianCurrency(itemTotal)}</td>
                                         </tr>
                                     );
@@ -816,10 +819,10 @@ export const SellMedicine: React.FC = () => {
                                 {
                                     sellItems.some(item => (item.discount || 0) > 0) && (
                                         <tr style={{ backgroundColor: alpha(theme.palette.warning.light, 0.1) }}>
-                                            <td colSpan={5} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'right', fontWeight: 'bold' }}>Discount</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>
+                                            <td colSpan={5} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>Discount: 
+                                            <span style={{ padding: '4px' }}>
                                                 ₹{formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}
-                                            </td>
+                                            </span></td>
                                         </tr>
                                     )
                                 }
