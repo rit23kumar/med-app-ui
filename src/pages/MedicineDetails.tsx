@@ -10,7 +10,9 @@ import {
     FormControlLabel,
     Switch,
     IconButton,
-    alpha
+    alpha,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import { Medicine, StockHistory } from '../types/medicine';
 import { medicineApi } from '../services/api';
@@ -176,6 +178,7 @@ const MedicineDetails: React.FC = () => {
                     <StockHistoryTable 
                         stockHistory={stockHistory}
                         loading={loadingHistory}
+                        onDeleteBatch={() => {}}
                     />
                 </Paper>
             </Box>

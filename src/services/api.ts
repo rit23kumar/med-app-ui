@@ -61,6 +61,10 @@ export const medicineApi = {
             params: { includeFinished }
         });
         return response.data;
+    },
+
+    deleteStockBatch: async (batchId: number): Promise<void> => {
+        await api.delete(`/medicines/stock/${batchId}`);
     }
 };
 

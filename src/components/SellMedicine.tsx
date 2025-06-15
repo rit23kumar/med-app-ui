@@ -362,107 +362,170 @@ export const SellMedicine: React.FC = () => {
         if (printWindow) {
             printWindow.document.write(`
                 <html>
-                <head>
-                    <title>Receipt</title>
-                    <style>
-                        @media print {
-                            @page {
-                                size: A5 portrait;
-                                margin: 0; /* Attempt to remove default margins */
-                                /* Optional: Hide browser-generated headers/footers (browser-dependent) */
-                                marks: none;
+                    <head>
+                        <title>Receipt</title>
+                        <style>
+                            @media print {
+                                @page {
+                                    size: A5 portrait;
+                                    margin: 4mm;
+                                    /* Optional: Hide browser-generated headers/footers (browser-dependent) */
+                                    marks: none;
+                                }
+                                html, body {
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    -webkit-print-color-adjust: exact;
+                                    print-color-adjust: exact;
+                                    font-family: Arial, sans-serif;
+                                    font-size: 7pt;
+                                    color: #000;
+                                }
+                                .container {
+                                    padding: 3mm;
+                                }
+                                .header-section {
+                                    margin-bottom: 5px;
+                                }
+                                .header-section h1 {
+                                    color: #009966;
+                                    font-size: 12pt;
+                                    margin: 0;
+                                }
+                                .header-section p {
+                                    font-size: 6pt;
+                                }
+                                .invoice-label {
+                                    text-align: center;
+                                    font-size: 12pt;
+                                    margin-top: 4px;
+                                    font-weight: bold;
+                                }
+                                .details-grid {
+                                    display: flex;
+                                    border: 1px solid #CCC;
+                                    margin-bottom: 12px;
+                                    font-size: 8pt;
+                                }
+                                .details-grid > div {
+                                    padding: 6px;
+                                    flex: 1;
+                                }
+                                .bill-to {
+                                    flex: 0.6;
+                                }
+                                .invoice-info {
+                                    flex: 0.4;
+                                }
+                                .invoice-info p, .bill-to p {
+                                    margin: 2px 0;
+                                }
+                                .invoice-table {
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    margin-bottom: 10px;
+                                }
+                                .invoice-table thead th {
+                                    border-bottom: 1px solid #000;
+                                    padding: 4px;
+                                    text-align: left;
+                                    font-weight: bold;
+                                    font-size: 8pt;
+                                }
+                                .invoice-table tbody td {
+                                    padding: 4px 4px;
+                                    font-size: 8pt;
+                                }
+                                .invoice-table td:nth-child(2) {
+                                    width: 45%;
+                                    font-family: 'Courier New', monospace;
+                                }
+                                .invoice-table td:nth-child(1),
+                                .invoice-table td:nth-child(3),
+                                .invoice-table td:nth-child(4),
+                                .invoice-table td:nth-child(5),
+                                .invoice-table td:nth-child(6) {
+                                    white-space: nowrap;
+                                }
+                                .invoice-table tfoot tr td {
+                                    padding: 6px 4px;
+                                    font-weight: bold;
+                                    font-size: 9pt;
+                                }
+                                .discount-row {
+                                    text-align: right;
+                                    border-top: 1px solid #000;
+                                }
+                                .total-row {
+                                    text-align: right;
+                                }
+                                .spacer {
+                                    height: 100px;
+                                }
                             }
-                            html, body {
-                                margin: 0 !important;
-                                padding: 0 !important;
-                                -webkit-print-color-adjust: exact; /* Ensures background colors are printed */
-                                print-color-adjust: exact;
-                            }
-                            body { font-family: 'Arial', sans-serif; font-size: 8pt; color: #333; }
-                            .container { padding: 10mm; }
-                            .header-section { margin-bottom: 20px; }
-                            .header-section h1 { color: #00A86B; font-size: 14pt; margin: 0; }
-                            .header-section p { margin: 2px 0; font-size: 7pt; color: #555; }
-                            .invoice-label { text-align: center; font-size: 10pt; }
-                            .details-grid { display: flex; border: 1px solid #ccc; margin-bottom: 15px; }
-                            .details-grid > div { padding: 8px; flex: 1; }
-                            .details-grid .bill-to { border-right: 1px solid #ccc; flex: 0.6; }
-                            .details-grid .invoice-info { flex: 0.4; }
-                            .details-grid p { margin: 2px 0; font-size: 7pt; }
-                            .details-grid strong { font-weight: bold; }
-                            .invoice-table { width: 100%; border-collapse: collapse; border: 1px solid #ccc; margin-bottom: 15px; }
-                            .invoice-table th, .invoice-table td { border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 7pt; }
-                            .invoice-table thead tr { background-color: #e0ffe0; }
-                            .invoice-table tfoot tr.discount-row { background-color: #e0ffe0; }
-                            .invoice-table tfoot tr.total-row { background-color: #aaffaa; }
-                            .text-right { text-align: right; }
-                            .font-bold { font-weight: bold; }
-                            .border-bottom { border-bottom: 1px solid #ccc; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header-section">
-                            <h1>Dev Medical Hall</h1>
-                            <p>Gola Road, Mahua, Bihar - 844122</p>
-                            <p class="invoice-label">TAX INVOICE</p>
-                        </div>
-
-                        <div class="details-grid">
-                            <div class="bill-to">
-                                <p><strong>Customer Name</strong></p>
-                                ${customer ? `<p>${customer}</p>` : 'ANONYMOUS'}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header-section">
+                                <h1>Dev Medical Hall<h1>
+                                <p>Gola Road, Mahua, Bihar - 844122</p>
+                                <p class="invoice-label">TAX INVOICE</p>
                             </div>
-                            <div class="invoice-info">
-                                <p><strong>Invoice No:</strong> XXXX</p>
-                                <p><strong>Date:</strong> ${format(new Date(), 'dd MMMM yyyy')}</p>
-                            </div>
-                        </div>
 
-                        <table class="invoice-table">
-                            <thead>
-                                <tr class="border-bottom">
-                                    <th>No.</th>
-                                    <th>Items</th>
-                                    <th>Quantity</th>
-                                    <th>Price/Unit</th>
-                                    <th>Tax</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${sellItems.map((item, idx) => {
-                                    const discountAmount = item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100);
-                                    const itemTotal = (item.price * item.quantity) - discountAmount;
-                                    return `
-                                        <tr>
-                                            <td>${idx + 1}</td>
-                                            <td style="width: 40%; font-family: 'Courier New';">${item.medicineName}</td>
-                                            <td>${item.quantity}</td>
-                                            <td>₹${formatIndianCurrency(item.price)}</td>
-                                            <td>₹0 (0%)</td>
-                                            <td>₹${formatIndianCurrency(itemTotal)}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                                ${sellItems.some(item => (item.discount || 0) > 0) ? `
-                                    <tr class="border-bottom"></tr>
-                                    <tr class="discount-row">
-                                        <td colspan="5" class="text-right font-bold">Discount: 
-                                        <span class="font-bold">₹${formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}</span></td>
+                            <div class="details-grid">
+                                <div class="bill-to">
+                                    <p><strong>Customer Name</strong></p>
+                                    <p>${customer || 'ANONYMOUS'}</p>
+                                </div>
+                                <div class="invoice-info">
+                                    <p><strong>Invoice No:</strong> XXXX</p>
+                                    <p><strong>Date:</strong> ${format(new Date(), 'dd MMMM yyyy')}</p>
+                                </div>
+                            </div>
+
+                            <table class="invoice-table">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Item(s)</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Tax</th>
+                                        <th>Amount</th>
                                     </tr>
-                                ` : ''}
-                            </tbody>
-                            <tfoot>
-                                <tr class="total-row">
-                                    <td colspan="2" class="text-right font-bold">Total    ₹${formatIndianCurrency(calculateTotal())}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </body>
-                </html>
+                                </thead>
+                                <tbody>
+                                    ${sellItems.map((item, idx) => {
+                                        const discountAmount = item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100);
+                                        const itemTotal = (item.price * item.quantity) - discountAmount;
+                                        return `
+                                            <tr>
+                                                <td>${idx + 1}</td>
+                                                <td>${item.medicineName}</td>
+                                                <td>${item.quantity}</td>
+                                                <td>₹${formatIndianCurrency(item.price)}</td>
+                                                <td>₹0</td>
+                                                <td>₹${formatIndianCurrency(itemTotal)}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                    ${sellItems.some(item => (item.discount || 0) > 0) ? `
+                                        <tr class="discount-row">
+                                            <td colspan="6">Discount: ₹${formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}</td>
+                                        </tr>
+                                    ` : ''}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="6">Total: ₹${formatIndianCurrency(calculateTotal())}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </body>
+                    </html>
+
             `);
             printWindow.document.close();
             printWindow.focus();
@@ -807,19 +870,19 @@ export const SellMedicine: React.FC = () => {
                                     const itemTotal = (item.price * item.quantity) - discountAmount;
                                     return (
                                         <tr key={idx}>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>{idx + 1}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>{idx + 1}</td>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', width: '40%', fontFamily: 'Courier New' }}>{item.medicineName}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>{item.quantity}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>₹{formatIndianCurrency(item.price)}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>₹ 0 (0%)</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>₹{formatIndianCurrency(itemTotal)}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>{item.quantity}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹{formatIndianCurrency(item.price)}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹ 0 (0%)</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹{formatIndianCurrency(itemTotal)}</td>
                                         </tr>
                                     );
                                 })}
                                 {
                                     sellItems.some(item => (item.discount || 0) > 0) && (
                                         <tr style={{ backgroundColor: alpha(theme.palette.warning.light, 0.1) }}>
-                                            <td colSpan={5} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>Discount: 
+                                            <td colSpan={6} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>Discount: 
                                             <span style={{ padding: '4px' }}>
                                                 ₹{formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}
                                             </span></td>

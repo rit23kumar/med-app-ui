@@ -10,15 +10,18 @@ import {
     Typography,
     Box,
     CircularProgress,
-    Chip
+    Chip,
+    IconButton
 } from '@mui/material';
 import { StockHistory } from '../types/medicine';
 import { format, differenceInDays } from 'date-fns';
 import { formatIndianCurrency } from '../utils/formatCurrency';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface StockHistoryTableProps {
     stockHistory: StockHistory[];
     loading: boolean;
+    onDeleteBatch: (batchId: number) => void;
 }
 
 const getRemainingDaysColor = (days: number): string => {
@@ -39,7 +42,7 @@ const formatExpiryText = (expDate: string) => {
     return `${formattedDate} (${remainingDays} Days Remaining)`;
 };
 
-const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loading }) => {
+const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loading, onDeleteBatch }) => {
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" p={3}>
@@ -77,6 +80,7 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                         <TableCell>Purchased</TableCell>
                         <TableCell>Available</TableCell>
                         <TableCell>Price</TableCell>
+                        <TableCell>Actions</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -97,6 +101,15 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                                 <TableCell>{entry.quantity}</TableCell>
                                 <TableCell>{entry.availableQuantity}</TableCell>
                                 <TableCell>₹{formatIndianCurrency(entry.price)}</TableCell>
+                                <TableCell>
+                                    <IconButton
+                                        color="error"
+                                        size="small"
+                                        onClick={() => onDeleteBatch(entry.id)}
+                                    >
+                                        <DeleteIcon />
+                                    </IconButton>
+                                </TableCell>
                             </TableRow>
                         );
                     })}

@@ -15,6 +15,11 @@ import {
   Card,
   CardContent,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -28,10 +33,6 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import InfoIcon from "@mui/icons-material/Info";
 import Tooltip from "@mui/material/Tooltip";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
 import { formatIndianCurrency } from "../utils/formatCurrency";
 
 const StockManagement: React.FC = () => {
@@ -57,6 +58,8 @@ const StockManagement: React.FC = () => {
     open: false,
     results: [] as any[],
   });
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [batchToDeleteId, setBatchToDeleteId] = useState<number | null>(null);
 
   // Calculate total available quantity
   const totalAvailable = useMemo(() => {
@@ -303,6 +306,27 @@ const StockManagement: React.FC = () => {
     setNotification({ ...notification, open: false });
   };
 
+  const handleDeleteBatch = (batchId: number) => {
+    setBatchToDeleteId(batchId);
+    setOpenConfirmDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (batchToDeleteId !== null) {
+      try {
+        await medicineApi.deleteStockBatch(batchToDeleteId);
+        showNotification("Batch deleted successfully", "success");
+        loadStockHistory(selectedMedicine?.id || 0);
+      } catch (error) {
+        console.error("Error deleting batch:", error);
+        showNotification("Error deleting batch", "error");
+      } finally {
+        setBatchToDeleteId(null);
+        setOpenConfirmDialog(false);
+      }
+    }
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 3 }}>
@@ -415,6 +439,7 @@ const StockManagement: React.FC = () => {
               <StockHistoryTable
                 stockHistory={stockHistory}
                 loading={loadingHistory}
+                onDeleteBatch={handleDeleteBatch}
               />
             </Paper>
           )}
@@ -603,6 +628,27 @@ const StockManagement: React.FC = () => {
               variant="contained"
             >
               Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Confirmation Dialog for deleting a batch */}
+        <Dialog
+          open={openConfirmDialog}
+          onClose={() => setOpenConfirmDialog(false)}
+        >
+          <DialogTitle>Confirm Deletion</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this batch? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenConfirmDialog(false)} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmDelete} color="error" autoFocus>
+              Delete
             </Button>
           </DialogActions>
         </Dialog>
