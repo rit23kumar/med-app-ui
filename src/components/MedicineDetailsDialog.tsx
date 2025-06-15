@@ -191,7 +191,6 @@ const MedicineDetailsDialog: React.FC<MedicineDetailsDialogProps> = ({ open, onC
                                     <StockHistoryTable 
                                         stockHistory={stockHistory}
                                         loading={loadingHistory}
-                                        onDeleteBatch={() => {}}
                                     />
                                 )}
                             </Grid>

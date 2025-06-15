@@ -11,7 +11,8 @@ import {
     Box,
     CircularProgress,
     Chip,
-    IconButton
+    IconButton,
+    alpha
 } from '@mui/material';
 import { StockHistory } from '../types/medicine';
 import { format, differenceInDays } from 'date-fns';
@@ -21,7 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 interface StockHistoryTableProps {
     stockHistory: StockHistory[];
     loading: boolean;
-    onDeleteBatch: (batchId: number) => void;
+    onDeleteBatch?: (batchId: number) => void;
 }
 
 const getRemainingDaysColor = (days: number): string => {
@@ -71,16 +72,16 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
     });
 
     return (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ boxShadow: 'none', border: 1, borderColor: 'divider' }}>
             <Table>
                 <TableHead>
-                    <TableRow>
+                    <TableRow sx={{ backgroundColor: alpha('#000', 0.02) }}>
                         <TableCell>Batch ID</TableCell>
                         <TableCell>Expiration Date</TableCell>
                         <TableCell>Purchased</TableCell>
                         <TableCell>Available</TableCell>
                         <TableCell>Price</TableCell>
-                        <TableCell>Actions</TableCell>
+                        {onDeleteBatch && <TableCell align="right">Actions</TableCell>}
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -101,15 +102,22 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                                 <TableCell>{entry.quantity}</TableCell>
                                 <TableCell>{entry.availableQuantity}</TableCell>
                                 <TableCell>₹{formatIndianCurrency(entry.price)}</TableCell>
-                                <TableCell>
-                                    <IconButton
-                                        color="error"
-                                        size="small"
-                                        onClick={() => onDeleteBatch(entry.id)}
-                                    >
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </TableCell>
+                                {onDeleteBatch && (
+                                    <TableCell align="right">
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => onDeleteBatch(entry.id)}
+                                            sx={{
+                                                color: 'error.main',
+                                                '&:hover': {
+                                                    backgroundColor: alpha('#f44336', 0.1)
+                                                }
+                                            }}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                    </TableCell>
+                                )}
                             </TableRow>
                         );
                     })}

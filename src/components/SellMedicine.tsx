@@ -330,7 +330,8 @@ export const SellMedicine: React.FC = () => {
                     quantity: item.quantity,
                     price: item.price,
                     expDate: item.expDate,
-                    discount: item.discount === '' ? 0 : item.discount || 0
+                    discount: item.discount === '' ? 0 : item.discount || 0,
+                    batchId: item.batchId,
                 }))
             };
             await sellApi.createsell(sellRequest);

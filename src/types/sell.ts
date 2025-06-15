@@ -27,5 +27,6 @@ export interface CreateSellRequest {
         price: number;
         expDate: string;
         discount?: number;
+        batchId: number;
     }[];
 } 
