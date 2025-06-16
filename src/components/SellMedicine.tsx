@@ -85,6 +85,7 @@ export const SellMedicine: React.FC = () => {
     const [showSellModal, setShowSellModal] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
     const [printError, setPrintError] = useState<string | null>(null);
+    const [currentSellId, setCurrentSellId] = useState<number | null>(null);
     const receiptRef = React.useRef<HTMLDivElement>(null);
     const quantityRefs = React.useRef<{ [batchId: number]: HTMLInputElement | null }>({});
     const [modeOfPayment, setModeOfPayment] = useState<'Cash' | 'Card' | 'UPI'>('Cash');
@@ -334,7 +335,8 @@ export const SellMedicine: React.FC = () => {
                     batchId: item.batchId,
                 }))
             };
-            await sellApi.createsell(sellRequest);
+            const response = await sellApi.createsell(sellRequest);
+            setCurrentSellId(response.id ?? null);
             setShowSuccess(true);
             setsellItems([]);
             setCustomer('');
@@ -370,7 +372,6 @@ export const SellMedicine: React.FC = () => {
                                 @page {
                                     size: A5 portrait;
                                     margin: 4mm;
-                                    /* Optional: Hide browser-generated headers/footers (browser-dependent) */
                                     marks: none;
                                 }
                                 html, body {
@@ -386,12 +387,12 @@ export const SellMedicine: React.FC = () => {
                                     padding: 3mm;
                                 }
                                 .header-section {
-                                    margin-bottom: 5px;
+                                    margin-bottom: 2px;
                                 }
                                 .header-section h1 {
-                                    color: #009966;
                                     font-size: 12pt;
                                     margin: 0;
+                                    padding: 0;
                                 }
                                 .header-section p {
                                     font-size: 6pt;
@@ -459,6 +460,7 @@ export const SellMedicine: React.FC = () => {
                                 }
                                 .total-row {
                                     text-align: right;
+                                    border-top: 1px solid #000;
                                 }
                                 .spacer {
                                     height: 100px;
@@ -470,18 +472,18 @@ export const SellMedicine: React.FC = () => {
                         <div class="container">
                             <div class="header-section">
                                 <h1>Dev Medical Hall<h1>
-                                <p>Gola Road, Mahua, Bihar - 844122</p>
+                                <p>Gola Road, Mahua, Vaishali - 844122</p>
                                 <p class="invoice-label">TAX INVOICE</p>
                             </div>
 
                             <div class="details-grid">
                                 <div class="bill-to">
-                                    <p><strong>Customer Name</strong></p>
-                                    <p>${customer || 'ANONYMOUS'}</p>
+                                    <p><strong>Name:</strong> ${customer || 'N/A'}</p>
+                                    <p><strong>Payment Mode:</strong> ${modeOfPayment}</p>
                                 </div>
                                 <div class="invoice-info">
-                                    <p><strong>Invoice No:</strong> XXXX</p>
-                                    <p><strong>Date:</strong> ${format(new Date(), 'dd MMMM yyyy')}</p>
+                                    <p><strong>Invoice No:</strong> IN${currentSellId || 'NA'}</p>
+                                    <p><strong>Date:</strong> ${format(new Date(), 'dd MMMM yyyy HH:mm')}</p>
                                 </div>
                             </div>
 
@@ -526,7 +528,6 @@ export const SellMedicine: React.FC = () => {
                         </div>
                     </body>
                     </html>
-
             `);
             printWindow.document.close();
             printWindow.focus();
@@ -845,11 +846,11 @@ export const SellMedicine: React.FC = () => {
                             <Grid item xs={5} sx={{ p: 1 }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice No:</Typography>
-                                    <Typography variant="body2">XXXX</Typography>
+                                    <Typography variant="body2">{currentSellId || 'XXXX'}</Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Date:</Typography>
-                                    <Typography variant="body2">{format(new Date(), 'dd MMMM yyyy')}</Typography>
+                                    <Typography variant="body2">{format(new Date(), 'dd MMMM yyyy HH:mm')}</Typography>
                                 </Box>
                             </Grid>
                         </Grid>
