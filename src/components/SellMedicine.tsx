@@ -396,6 +396,8 @@ export const SellMedicine: React.FC = () => {
                                 }
                                 .header-section p {
                                     font-size: 6pt;
+                                    margin: 0;
+                                    padding: 0;
                                 }
                                 .invoice-label {
                                     text-align: center;
@@ -438,7 +440,7 @@ export const SellMedicine: React.FC = () => {
                                     padding: 4px 4px;
                                     font-size: 8pt;
                                 }
-                                .invoice-table td:nth-child(2) {
+                                .invoice-table td {
                                     width: 45%;
                                     font-family: 'Courier New', monospace;
                                 }
@@ -464,6 +466,9 @@ export const SellMedicine: React.FC = () => {
                                 }
                                 .spacer {
                                     height: 100px;
+                                }
+                                .numeric-view {
+                                    font-family: 'Courier New', monospace;
                                 }
                             }
                         </style>
@@ -493,9 +498,9 @@ export const SellMedicine: React.FC = () => {
                                         <th>No</th>
                                         <th>Item(s)</th>
                                         <th>Qty</th>
-                                        <th>Price</th>
+                                        <th>Price(₹)</th>
                                         <th>Tax</th>
-                                        <th>Amount</th>
+                                        <th>Amount(₹)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -507,15 +512,15 @@ export const SellMedicine: React.FC = () => {
                                                 <td>${idx + 1}</td>
                                                 <td>${item.medicineName}</td>
                                                 <td>${item.quantity}</td>
-                                                <td>₹${formatIndianCurrency(item.price)}</td>
-                                                <td>₹0</td>
-                                                <td>₹${formatIndianCurrency(itemTotal)}</td>
+                                                <td>${formatIndianCurrency(item.price)}</td>
+                                                <td>0</td>
+                                                <td>${formatIndianCurrency(itemTotal)}</td>
                                             </tr>
                                         `;
                                     }).join('')}
                                     ${sellItems.some(item => (item.discount || 0) > 0) ? `
                                         <tr class="discount-row">
-                                            <td colspan="6">Discount: ₹${formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}</td>
+                                            <td class="numeric-view" colspan="6">Discount: ₹${formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}</td>
                                         </tr>
                                     ` : ''}
                                 </tbody>
@@ -873,10 +878,10 @@ export const SellMedicine: React.FC = () => {
                                     return (
                                         <tr key={idx}>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>{idx + 1}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', width: '40%', fontFamily: 'Courier New' }}>{item.medicineName}</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New', width: '40%' }}>{item.medicineName}</td>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>{item.quantity}</td>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹{formatIndianCurrency(item.price)}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹ 0 (0%)</td>
+                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹0 (0%)</td>
                                             <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹{formatIndianCurrency(itemTotal)}</td>
                                         </tr>
                                     );
