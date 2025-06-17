@@ -3,5 +3,5 @@ export interface UserResponseDto {
   username: string;
   fullName: string;
   role: string;
-  active: boolean;
+  enabled: boolean;
 } 

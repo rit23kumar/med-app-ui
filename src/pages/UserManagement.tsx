@@ -317,7 +317,7 @@ const UserManagement: React.FC = () => {
                     <TableCell>Username</TableCell>
                     <TableCell>Full Name</TableCell>
                     <TableCell>Roles</TableCell>
-                    <TableCell>Active</TableCell>
+                    <TableCell>Enabled</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -332,13 +332,13 @@ const UserManagement: React.FC = () => {
                         <FormControlLabel
                           control={
                             <Switch
-                              checked={user.active}
-                              onChange={() => handleToggleStatus(user.id, user.active)}
-                              name="active-switch"
+                              checked={user.enabled}
+                              onChange={() => handleToggleStatus(user.id, user.enabled)}
+                              name="enabled-switch"
                               disabled={user.username === currentUser?.username}
                             />
                           }
-                          label={user.active ? 'Enabled' : 'Disabled'}
+                          label={user.enabled ? 'Enabled' : 'Disabled'}
                         />
                       </TableCell>
                       <TableCell>
