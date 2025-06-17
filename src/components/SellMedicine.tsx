@@ -441,8 +441,10 @@ export const SellMedicine: React.FC = () => {
                                     font-size: 8pt;
                                 }
                                 .invoice-table td {
-                                    width: 45%;
                                     font-family: 'Courier New', monospace;
+                                }
+                                .invoice-table td:nth-child(2) {
+                                    width: 45%;
                                 }
                                 .invoice-table td:nth-child(1),
                                 .invoice-table td:nth-child(3),

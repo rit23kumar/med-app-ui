@@ -151,7 +151,7 @@ const SalesHistory: React.FC = () => {
                 }
                 fullWidth
               >
-                {loading ? <CircularProgress size={24} /> : "Search"}
+                {loading ? <CircularProgress size={24} /> : "Show Sales"}
               </Button>
             </Grid>
             <Grid item xs={12} sm={3}>

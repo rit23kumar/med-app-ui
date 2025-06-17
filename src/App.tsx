@@ -5,6 +5,7 @@ import { CustomThemeProvider } from './theme/ThemeContext';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AppRoutes } from './routes';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
     return (
@@ -12,7 +13,9 @@ function App() {
             <CssBaseline />
             <Router>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <AppRoutes />
+                    <AuthProvider>
+                        <AppRoutes />
+                    </AuthProvider>
                 </LocalizationProvider>
             </Router>
         </CustomThemeProvider>

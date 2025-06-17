@@ -30,7 +30,10 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import HistoryIcon from '@mui/icons-material/History';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { useThemeContext } from '../theme/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -41,14 +44,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { mode, toggleColorMode } = useThemeContext();
+  const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const menuItems = [
-    { text: 'Sales', path: '/', icon: <ShoppingCartIcon /> },
-    { text: 'Inventory', path: '/medicine-inventory', icon: <DashboardIcon /> },
-    { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon /> },
-    { text: 'Sale History', path: '/sales-history', icon: <ReceiptIcon /> },
-    { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon /> }
+    { text: 'Sales', path: '/', icon: <ShoppingCartIcon />, roles: ['ADMIN', 'USER'] },
+    { text: 'Inventory', path: '/medicine-inventory', icon: <DashboardIcon />, roles: ['ADMIN', 'USER'] },
+    { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon />, roles: ['ADMIN'] },
+    { text: 'Sale History', path: '/sales-history', icon: <ReceiptIcon />, roles: ['ADMIN', 'USER'] },
+    { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon />, roles: ['ADMIN'] },
+    { text: 'User Management', path: '/user-management', icon: <PeopleAltIcon />, roles: ['ADMIN'] }
   ];
 
   const handleDrawerToggle = () => {
@@ -57,6 +62,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleNavigation = (path: string) => {
     navigate(path);
+    setDrawerOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
     setDrawerOpen(false);
   };
 
@@ -78,37 +89,62 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </Typography>
       </Box>
       <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path)}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.15),
-                  }
-                }
-              }}
-            >
-              <ListItemIcon sx={{ 
-                color: location.pathname === item.path ? theme.palette.primary.main : theme.palette.text.secondary 
-              }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText 
-                primary={item.text} 
+        {isAuthenticated && menuItems.map((item) => {
+          const hasRequiredRole = item.roles.some(role => user?.roles.includes(role));
+
+          return hasRequiredRole ? (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                selected={location.pathname === item.path}
+                onClick={() => handleNavigation(item.path)}
                 sx={{
-                  '& .MuiTypography-root': {
-                    color: location.pathname === item.path ? theme.palette.primary.main : theme.palette.text.primary,
-                    fontWeight: location.pathname === item.path ? 600 : 400
+                  '&.Mui-selected': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.15),
+                    }
                   }
                 }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+              >
+                <ListItemIcon sx={{ 
+                  color: location.pathname === item.path ? theme.palette.primary.main : theme.palette.text.secondary 
+                }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  sx={{
+                    '& .MuiTypography-root': {
+                      color: location.pathname === item.path ? theme.palette.primary.main : theme.palette.text.primary,
+                      fontWeight: location.pathname === item.path ? 600 : 400
+                    }
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ) : null;
+        })}
+        {isAuthenticated && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleLogout}>
+                <ListItemIcon sx={{ color: theme.palette.text.secondary }}>
+                  <LogoutIcon />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Logout" 
+                  sx={{
+                    '& .MuiTypography-root': {
+                      color: theme.palette.text.primary,
+                      fontWeight: 400
+                    }
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          </>
+        )}
       </List>
     </Box>
   );
@@ -156,6 +192,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               Medicine Shop
             </Typography>
+            {isAuthenticated && (
+              <Button
+                color="inherit"
+                onClick={handleLogout}
+                sx={{
+                  color: theme.palette.text.primary,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  ml: 2
+                }}
+              >
+                Logout
+              </Button>
+            )}
             <Tooltip title={`Toggle ${mode === 'light' ? 'dark' : 'light'} mode`}>
               <IconButton onClick={toggleColorMode} color="inherit" sx={{ ml: 1 }}>
                 {mode === 'light' ? (
