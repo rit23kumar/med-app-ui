@@ -1,4 +1,5 @@
 import axios from 'axios';
+import apiClient from './axiosConfig';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -11,8 +12,8 @@ export interface LoginResponse {
   token: string;
   username: string;
   fullName: string;
-  roles: string[];
-  id?: number;
+  role: string;
+  id: number;
   code?: string;
   message?: string;
 }
@@ -58,4 +59,16 @@ export const authApi = {
       throw error;
     }
   },
+
+  getCurrentUser: async (): Promise<LoginResponse> => {
+    try {
+      const response = await apiClient.get<LoginResponse>('/auth/current-user');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        throw new Error('Session expired');
+      }
+      throw error;
+    }
+  }
 }; 

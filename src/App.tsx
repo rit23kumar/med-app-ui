@@ -5,21 +5,38 @@ import { CustomThemeProvider } from './theme/ThemeContext';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AppRoutes } from './routes';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { IdleTimeoutWarning } from './components/IdleTimeoutWarning';
 
-function App() {
+const AppContent: React.FC = () => {
+    const { isAuthenticated, user } = useAuth();
+
     return (
-        <CustomThemeProvider>
-            <CssBaseline />
-            <Router>
+        <>
+            {isAuthenticated && (
+                <IdleTimeoutWarning 
+                    warningTime={30} // Show warning 30 seconds before timeout
+                    timeoutTime={150} // 2.5 minutes for all users
+                />
+            )}
+            <AppRoutes />
+        </>
+    );
+};
+
+const App: React.FC = () => {
+    return (
+        <Router>
+            <CustomThemeProvider>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <CssBaseline />
                     <AuthProvider>
-                        <AppRoutes />
+                        <AppContent />
                     </AuthProvider>
                 </LocalizationProvider>
-            </Router>
-        </CustomThemeProvider>
+            </CustomThemeProvider>
+        </Router>
     );
-}
+};
 
 export default App;

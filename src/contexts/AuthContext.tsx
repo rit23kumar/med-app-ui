@@ -5,7 +5,7 @@ interface User {
   id: number;
   username: string;
   fullName: string;
-  roles: string[];
+  role: string;
 }
 
 interface AuthContextType {
@@ -47,14 +47,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Ensure all required fields are present
-      if (!response.token || !response.username || !response.fullName || !response.roles) {
+      if (!response.token || !response.username || !response.fullName || !response.role) {
         throw new Error('Invalid response from server: Missing required user data');
       }
 
-      const { token, username: user, fullName, roles } = response;
+      const { token, username: user, fullName, role, id } = response;
       
-      // Create a user object with a default id of 0 for the current user
-      const userObj = { id: 0, username: user, fullName, roles };
+      // Create a user object
+      const userObj = { id, username: user, fullName, role };
       
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userObj));
@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAuthenticated = !!token;
-  const isAdmin = user?.roles?.includes('ADMIN') ?? false;
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated, isAdmin }}>

@@ -17,7 +17,8 @@ import {
   ListItemText,
   ListItemButton,
   Divider,
-  alpha
+  alpha,
+  CssBaseline
 } from '@mui/material';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
@@ -39,6 +40,13 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+interface MenuItem {
+  text: string;
+  path: string;
+  icon: React.ReactNode;
+  role: string;
+}
+
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -47,13 +55,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const menuItems = [
-    { text: 'Sales', path: '/', icon: <ShoppingCartIcon />, roles: ['ADMIN', 'USER'] },
-    { text: 'Inventory', path: '/medicine-inventory', icon: <DashboardIcon />, roles: ['ADMIN', 'USER'] },
-    { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon />, roles: ['ADMIN'] },
-    { text: 'Sale History', path: '/sales-history', icon: <ReceiptIcon />, roles: ['ADMIN', 'USER'] },
-    { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon />, roles: ['ADMIN'] },
-    { text: 'User Management', path: '/user-management', icon: <PeopleAltIcon />, roles: ['ADMIN'] }
+  const menuItems: MenuItem[] = [
+    { text: 'Sales', path: '/', icon: <ShoppingCartIcon />, role: 'USER' },
+    { text: 'Inventory', path: '/medicine-inventory', icon: <DashboardIcon />, role: 'USER' },
+    { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon />, role: 'ADMIN' },
+    { text: 'Sale History', path: '/sales-history', icon: <ReceiptIcon />, role: 'USER' },
+    { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon />, role: 'ADMIN' },
+    { text: 'User Management', path: '/user-management', icon: <PeopleAltIcon />, role: 'ADMIN' }
   ];
 
   const handleDrawerToggle = () => {
@@ -69,6 +77,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     logout();
     navigate('/login');
     setDrawerOpen(false);
+  };
+
+  const isMenuItemVisible = (item: MenuItem) => {
+    // Admin can see all items
+    if (user?.role === 'ADMIN') return true;
+    // Regular users can only see items with role 'USER'
+    return item.role === 'USER';
   };
 
   const drawer = (
@@ -89,10 +104,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </Typography>
       </Box>
       <List>
-        {isAuthenticated && menuItems.map((item) => {
-          const hasRequiredRole = item.roles.some(role => user?.roles.includes(role));
-
-          return hasRequiredRole ? (
+        {menuItems.map((item) => (
+          isMenuItemVisible(item) && (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
                 selected={location.pathname === item.path}
@@ -122,8 +135,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 />
               </ListItemButton>
             </ListItem>
-          ) : null;
-        })}
+          )
+        ))}
         {isAuthenticated && (
           <>
             <Divider sx={{ my: 1 }} />
@@ -151,6 +164,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <CssBaseline />
       <AppBar 
         position="fixed" 
         sx={{ 
