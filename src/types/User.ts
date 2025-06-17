@@ -2,6 +2,6 @@ export interface UserResponseDto {
   id: number;
   username: string;
   fullName: string;
-  roles: string[];
+  role: string;
   active: boolean;
 } 

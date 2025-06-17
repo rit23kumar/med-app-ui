@@ -5,14 +5,14 @@ export interface UserRegistrationRequest {
   fullName: string;
   username: string;
   password: string;
-  roles: string[];
+  role: string;
 }
 
 export interface UserResponse {
   id: number;
   fullName: string;
   username: string;
-  roles: string[];
+  role: string;
   active: boolean;
 }
 

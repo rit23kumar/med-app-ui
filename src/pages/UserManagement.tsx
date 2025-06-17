@@ -79,6 +79,7 @@ const UserManagement: React.FC = () => {
     setManageErrorMessage(null);
     try {
       const response = await userApi.getAllUsers();
+      console.log('Users response:', response);
       setUsers(response);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -106,7 +107,7 @@ const UserManagement: React.FC = () => {
       fullName,
       username,
       password,
-      roles: [role],
+      role,
     };
 
     try {
@@ -326,7 +327,7 @@ const UserManagement: React.FC = () => {
                       <TableCell>{user.id}</TableCell>
                       <TableCell>{user.username}</TableCell>
                       <TableCell>{user.fullName}</TableCell>
-                      <TableCell>{user.roles.join(', ')}</TableCell>
+                      <TableCell>{user.role || 'USER'}</TableCell>
                       <TableCell>
                         <FormControlLabel
                           control={
