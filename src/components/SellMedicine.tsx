@@ -7,12 +7,8 @@ import {
     useTheme,
     alpha,
     Alert,
-    Collapse,
     IconButton,
     CircularProgress,
-    Card,
-    CardContent,
-    Stack,
     Autocomplete,
     Table,
     TableBody,
@@ -21,10 +17,7 @@ import {
     TableHead,
     TableRow,
     Paper,
-    Tooltip,
-    InputAdornment,
     Checkbox,
-    FormControlLabel,
     Grid,
     Snackbar,
     MenuItem,
@@ -36,8 +29,6 @@ import { Medicine, StockHistory } from '../types/medicine';
 import { CreateSellRequest } from '../types/sell';
 import { medicineApi, sellApi } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -83,9 +74,7 @@ export const SellMedicine: React.FC = () => {
     const [availableBatches, setAvailableBatches] = useState<StockHistory[]>([]);
     const [selectedBatches, setSelectedBatches] = useState<{ [key: number]: SelectedBatchQuantity }>({});
     const [showSellModal, setShowSellModal] = useState(false);
-    const [isPrinting, setIsPrinting] = useState(false);
     const [printError, setPrintError] = useState<string | null>(null);
-    const [currentSellId, setCurrentSellId] = useState<number | null>(null);
     const receiptRef = React.useRef<HTMLDivElement>(null);
     const quantityRefs = React.useRef<{ [batchId: number]: HTMLInputElement | null }>({});
     const [modeOfPayment, setModeOfPayment] = useState<'Cash' | 'Card' | 'UPI'>('Cash');
@@ -336,16 +325,17 @@ export const SellMedicine: React.FC = () => {
                 }))
             };
             const response = await sellApi.createsell(sellRequest);
-            setCurrentSellId(response.id ?? null);
+
+            if (print) {
+                handlePrintReceipt(response.id);
+            }
+            
             setShowSuccess(true);
             setsellItems([]);
             setCustomer('');
             setSelectedMedicine(null);
             setSelectedBatches({});
             setShowSellModal(false);
-            if (print) {
-                handlePrintReceipt();
-            }
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || 
                 error.response?.data?.error || 
@@ -358,7 +348,7 @@ export const SellMedicine: React.FC = () => {
         }
     };
 
-    const handlePrintReceipt = () => {
+    const handlePrintReceipt = (sellsId: number | undefined) => {
         if (!receiptRef.current) return;
         const printContents = receiptRef.current.innerHTML;
         const printWindow = window.open('', '', 'width=595,height=842'); // A5 size in px
@@ -489,7 +479,7 @@ export const SellMedicine: React.FC = () => {
                                     <p><strong>Payment Mode:</strong> ${modeOfPayment}</p>
                                 </div>
                                 <div class="invoice-info">
-                                    <p><strong>Invoice No:</strong> IN${currentSellId || 'NA'}</p>
+                                    <p><strong>Invoice No:</strong> IN${sellsId || 'XX'}</p>
                                     <p><strong>Date:</strong> ${format(new Date(), 'dd MMMM yyyy HH:mm')}</p>
                                 </div>
                             </div>
@@ -853,7 +843,7 @@ export const SellMedicine: React.FC = () => {
                             <Grid item xs={5} sx={{ p: 1 }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice No:</Typography>
-                                    <Typography variant="body2">{currentSellId || 'XXXX'}</Typography>
+                                    <Typography variant="body2">XXXX</Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Date:</Typography>
