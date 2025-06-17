@@ -20,6 +20,9 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   (response) => {
+    // Dispatch event for API activity
+    window.dispatchEvent(new Event('apiActivity'));
+    
     // Check for new token in response header
     const newToken = response.headers['new-token'];
     if (newToken) {

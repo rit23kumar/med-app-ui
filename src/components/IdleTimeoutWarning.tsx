@@ -46,6 +46,18 @@ export const IdleTimeoutWarning: React.FC<IdleTimeoutWarningProps> = ({ warningT
         navigate('/login');
     };
 
+    // Listen for API activity
+    useEffect(() => {
+        const handleApiActivity = () => {
+            setLastBackendActivity(Date.now());
+            setShowWarning(false);
+            setTimeLeft(warningTime);
+        };
+
+        window.addEventListener('apiActivity', handleApiActivity);
+        return () => window.removeEventListener('apiActivity', handleApiActivity);
+    }, [warningTime]);
+
     // Check for backend idle timeout
     useEffect(() => {
         const checkIdle = () => {
