@@ -17,6 +17,7 @@ export interface MedicineWithStock {
 
 export interface StockHistory {
     id: number;
+    medicineName: string;
     expDate: string;
     quantity: number;
     availableQuantity: number;

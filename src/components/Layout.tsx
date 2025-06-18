@@ -100,7 +100,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         <LocalHospitalIcon sx={{ color: theme.palette.primary.main }} />
         <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-          Medicine Shop
+          Dev Medical Hall
         </Typography>
       </Box>
       <List>
@@ -204,7 +204,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 flexGrow: 1
               }}
             >
-              Medicine Shop
+              Dev Medical Hall
             </Typography>
             {isAuthenticated && (
               <Button

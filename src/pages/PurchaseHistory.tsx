@@ -23,7 +23,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { format } from "date-fns";
 import { getPurchaseHistory } from "../services/historyService";
-import { MedStock } from "../types";
+import { StockHistory } from "../types/medicine";
 import { formatIndianCurrency } from "../utils/formatCurrency";
 
 const PurchaseHistory: React.FC = () => {
@@ -32,7 +32,7 @@ const PurchaseHistory: React.FC = () => {
   const [date, setDate] = useState<Date>(today);
   const [fromDate, setFromDate] = useState<Date>(today);
   const [toDate, setToDate] = useState<Date>(today);
-  const [purchases, setPurchases] = useState<MedStock[]>([]);
+  const [purchases, setPurchases] = useState<StockHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalPurchasedAmount, setTotalPurchasedAmount] = useState(0);
@@ -85,7 +85,7 @@ const PurchaseHistory: React.FC = () => {
     }
   };
 
-  const calculateTotal = (data: MedStock[]): number => {
+  const calculateTotal = (data: StockHistory[]): number => {
     return data.reduce((sum, item) => sum + item.quantity * item.price, 0);
   };
 
@@ -156,7 +156,7 @@ const PurchaseHistory: React.FC = () => {
                 }
                 fullWidth
               >
-                {loading ? <CircularProgress size={24} /> : "Search"}
+                {loading ? <CircularProgress size={24} /> : "Show Purchase"}
               </Button>
             </Grid>
           </Grid>
@@ -208,7 +208,7 @@ const PurchaseHistory: React.FC = () => {
                     <TableCell>
                       {format(new Date(purchase.createdAt), "dd/MM/yy HH:mm")}
                     </TableCell>
-                    <TableCell>{purchase.medicine.name}</TableCell>
+                    <TableCell>{purchase.medicineName}</TableCell>
                     <TableCell>{purchase.quantity}</TableCell>
                     <TableCell>
                       ₹{formatIndianCurrency(purchase.price)}

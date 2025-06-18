@@ -1,14 +1,13 @@
 import apiClient from '../api/axiosConfig';
-import { MedStock, Sell } from '../types/index';
+import { sell } from '../types/sell';
+import { StockHistory } from '../types/medicine';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-export const getSalesHistory = async (fromDate: string, toDate: string): Promise<Sell[]> => {
-    const response = await apiClient.post(`${API_BASE_URL}/history/sales`, { fromDate, toDate });
+export const getSalesHistory = async (fromDate: string, toDate: string): Promise<sell[]> => {
+    const response = await apiClient.post('/history/sales', { fromDate, toDate });
     return response.data;
 };
 
-export const getPurchaseHistory = async (fromDate: string, toDate: string): Promise<MedStock[]> => {
-    const response = await apiClient.post(`${API_BASE_URL}/history/purchases`, { fromDate, toDate });
+export const getPurchaseHistory = async (fromDate: string, toDate: string): Promise<StockHistory[]> => {
+    const response = await apiClient.post('/history/purchases', { fromDate, toDate });
     return response.data;
 }; 
