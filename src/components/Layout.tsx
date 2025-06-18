@@ -177,15 +177,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         <Container maxWidth="lg">
           <Toolbar disableGutters>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon sx={{ color: theme.palette.text.primary }} />
-            </IconButton>
+            {isAuthenticated && (
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{ mr: 2 }}
+              >
+                <MenuIcon sx={{ color: theme.palette.text.primary }} />
+              </IconButton>
+            )}
             <LocalHospitalIcon 
               sx={{ 
                 color: theme.palette.primary.main,

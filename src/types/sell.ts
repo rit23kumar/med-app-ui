@@ -21,6 +21,7 @@ export interface sell {
 export interface CreateSellRequest {
     customer?: string;
     modeOfPayment: 'Cash' | 'Card' | 'UPI';
+    utrNumber?: string;
     items: {
         medicineId: number;
         quantity: number;

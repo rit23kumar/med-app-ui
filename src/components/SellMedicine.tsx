@@ -78,6 +78,7 @@ export const SellMedicine: React.FC = () => {
     const receiptRef = React.useRef<HTMLDivElement>(null);
     const quantityRefs = React.useRef<{ [batchId: number]: HTMLInputElement | null }>({});
     const [modeOfPayment, setModeOfPayment] = useState<'Cash' | 'Card' | 'UPI'>('Cash');
+    const [utrNumber, setUtrNumber] = useState<string>('');
 
     const medicineAutocompleteRef = useRef<HTMLInputElement>(null);
 
@@ -308,6 +309,12 @@ export const SellMedicine: React.FC = () => {
             setError('Please add at least one item to the sell');
             return;
         }
+
+        if (modeOfPayment === 'UPI' && utrNumber && utrNumber.length < 6) {
+            setError('UTR number must be at least 6 digits');
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
         setPrintError(null);
@@ -315,6 +322,7 @@ export const SellMedicine: React.FC = () => {
             const sellRequest: CreateSellRequest = {
                 customer: customer || undefined,
                 modeOfPayment,
+                utrNumber: modeOfPayment === 'UPI' ? utrNumber : undefined,
                 items: sellItems.map(item => ({
                     medicineId: item.medicineId,
                     quantity: item.quantity,
@@ -336,6 +344,7 @@ export const SellMedicine: React.FC = () => {
             setSelectedMedicine(null);
             setSelectedBatches({});
             setShowSellModal(false);
+            setUtrNumber('');
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || 
                 error.response?.data?.error || 
@@ -476,7 +485,7 @@ export const SellMedicine: React.FC = () => {
                             <div class="details-grid">
                                 <div class="bill-to">
                                     <p><strong>Name:</strong> ${customer || 'N/A'}</p>
-                                    <p><strong>Payment Mode:</strong> ${modeOfPayment}</p>
+                                    <p><strong>Payment Mode:</strong> ${modeOfPayment} ${utrNumber}</p>
                                 </div>
                                 <div class="invoice-info">
                                     <p><strong>Invoice No:</strong> IN${sellsId || 'XX'}</p>
@@ -752,9 +761,9 @@ export const SellMedicine: React.FC = () => {
                     <Box sx={{ mt: 3 }}>
                         <Grid container spacing={2} alignItems="center">
                             {/* Left side: Customer and Payment Mode */}
-                            <Grid item xs={12} sm={7} md={7}>
-                                <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
+                            <Grid item xs={12} sm={9} md={9}>
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} sm={5}>
                                         <TextField
                                             label="Customer Name (Optional)"
                                             value={customer}
@@ -763,7 +772,7 @@ export const SellMedicine: React.FC = () => {
                                             fullWidth
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid item xs={12} sm={3}>
                                         <FormControl size="small" fullWidth>
                                             <InputLabel id="mode-of-payment-label">Mode of Payment</InputLabel>
                                             <Select
@@ -778,11 +787,28 @@ export const SellMedicine: React.FC = () => {
                                             </Select>
                                         </FormControl>
                                     </Grid>
+                                    {modeOfPayment === 'UPI' && (
+                                        <Grid item xs={12} sm={4}>
+                                            <TextField
+                                                label="Last 6-digit of UTR (Optional)"
+                                                value={utrNumber}
+                                                onChange={(e) => setUtrNumber(e.target.value)}
+                                                inputProps={{ 
+                                                    maxLength: 12,
+                                                    pattern: '[0-9]*'
+                                                }}
+                                                error={utrNumber.length > 0 && utrNumber.length < 6}
+                                                helperText={utrNumber.length > 0 && utrNumber.length < 6 ? "UTR must be at least 6 digits" : ""}
+                                                size="small"
+                                                fullWidth
+                                            />
+                                        </Grid>
+                                    )}
                                 </Grid>
                             </Grid>
 
                             {/* Right side: Total and Complete Sell Button */}
-                            <Grid item xs={12} sm={5} md={5}>
+                            <Grid item xs={12} sm={3} md={3}>
                                 <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, mt: { xs: 2, sm: 0 } }}>
                                     <Typography variant="h6" gutterBottom>
                                         Total: ₹{formatIndianCurrency(calculateTotal())}
