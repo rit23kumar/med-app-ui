@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: process.env.REACT_APP_API_BASE_URL,
 });
 
 apiClient.interceptors.request.use(

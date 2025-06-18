@@ -1,7 +1,7 @@
 import axios from 'axios';
 import apiClient from './axiosConfig';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = process.env.REACT_APP_API_BASE_URL;
 
 export interface LoginRequest {
   username: string;
