@@ -258,6 +258,7 @@ const SalesHistory: React.FC = () => {
                     </Menu>
                   </Box>
                 </TableCell>
+                <TableCell>Created By</TableCell>
                 <TableCell>Items</TableCell>
               </TableRow>
             </TableHead>
@@ -285,6 +286,7 @@ const SalesHistory: React.FC = () => {
                       ₹{formatIndianCurrency(sale.totalAmount)}
                     </TableCell>
                     <TableCell>{sale.modeOfPayment || "N/A"}</TableCell>
+                    <TableCell>{sale.createdBy || "N/A"}</TableCell>
                     <TableCell>
                       {(sale.items as sellItem[]).map((item: sellItem) => (
                         <div

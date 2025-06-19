@@ -16,6 +16,7 @@ export interface sell {
     totalAmount: number;
     modeOfPayment?: string;
     items: sellItem[];
+    createdBy?: string;
 }
 
 export interface CreateSellRequest {

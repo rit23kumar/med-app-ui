@@ -103,6 +103,12 @@ const UserManagement: React.FC = () => {
       return;
     }
 
+    if (username.length < 3 || username.length > 8) {
+      setCreationError('Username must be between 3 and 8 characters.');
+      setLoading(false);
+      return;
+    }
+
     const requestBody: UserRegistrationRequest = {
       fullName,
       username,
@@ -255,6 +261,7 @@ const UserManagement: React.FC = () => {
             autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            inputProps={{ minLength: 3, maxLength: 8 }}
           />
           <TextField
             margin="normal"
