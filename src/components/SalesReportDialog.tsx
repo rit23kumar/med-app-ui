@@ -63,15 +63,17 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
     const cashTotal = calculateModeTotal('Cash');
     const upiTotal = calculateModeTotal('UPI');
     const cardTotal = calculateModeTotal('Card');
+    const wardUseTotal = calculateModeTotal('Ward Use');
+    const payLaterTotal = calculateModeTotal('Pay Later');
     const otherTotal = sales
-        .filter(sale => !sale.modeOfPayment || !['Cash', 'UPI', 'Card'].includes(sale.modeOfPayment))
+        .filter(sale => !sale.modeOfPayment || !['Cash', 'UPI', 'Card', 'Ward Use', 'Pay Later'].includes(sale.modeOfPayment))
         .reduce((total, sale) => {
             return total + (sale.items?.reduce((itemSum, item) => {
                 const discount = item.discount ?? 0;
                 return itemSum + item.price * item.quantity * (1 - discount / 100);
             }, 0) || 0);
         }, 0);
-    const totalSales = cashTotal + upiTotal + cardTotal + otherTotal;
+    const totalSales = cashTotal + upiTotal + cardTotal + wardUseTotal + payLaterTotal + otherTotal;
 
     const formatDateRange = () => {
         if (isSameDay(fromDate, toDate)) {
@@ -117,6 +119,22 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                                 <CreditCardIcon color="warning" fontSize="medium" />
                                 <Typography variant="subtitle1" gutterBottom>
                                     Card Sales: ₹{formatIndianCurrency(cardTotal)}
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Paper sx={cardStyles(isDark ? theme.palette.secondary.light : '#f3e5f5')}>
+                                <AccountBalanceWalletIcon color="secondary" fontSize="medium" />
+                                <Typography variant="subtitle1" gutterBottom>
+                                    Ward Use: ₹{formatIndianCurrency(wardUseTotal)}
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Paper sx={cardStyles(isDark ? theme.palette.secondary.dark : '#ffe0b2')}>
+                                <AccountBalanceWalletIcon color="secondary" fontSize="medium" />
+                                <Typography variant="subtitle1" gutterBottom>
+                                    Pay Later: ₹{formatIndianCurrency(payLaterTotal)}
                                 </Typography>
                             </Paper>
                         </Grid>
