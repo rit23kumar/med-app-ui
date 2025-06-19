@@ -20,7 +20,7 @@ export interface sell {
 
 export interface CreateSellRequest {
     customer?: string;
-    modeOfPayment: 'Cash' | 'Card' | 'UPI';
+    modeOfPayment: 'Cash' | 'Card' | 'UPI' | 'Ward Use' | 'Pay Later';
     utrNumber?: string;
     items: {
         medicineId: number;

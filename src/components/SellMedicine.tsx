@@ -77,7 +77,7 @@ export const SellMedicine: React.FC = () => {
     const [printError, setPrintError] = useState<string | null>(null);
     const receiptRef = React.useRef<HTMLDivElement>(null);
     const quantityRefs = React.useRef<{ [batchId: number]: HTMLInputElement | null }>({});
-    const [modeOfPayment, setModeOfPayment] = useState<'Cash' | 'Card' | 'UPI'>('Cash');
+    const [modeOfPayment, setModeOfPayment] = useState<'Cash' | 'Card' | 'UPI' | 'Ward Use' | 'Pay Later'>('Cash');
     const [utrNumber, setUtrNumber] = useState<string>('');
 
     const medicineAutocompleteRef = useRef<HTMLInputElement>(null);
@@ -779,11 +779,12 @@ export const SellMedicine: React.FC = () => {
                                                 labelId="mode-of-payment-label"
                                                 value={modeOfPayment}
                                                 label="Mode of Payment"
-                                                onChange={e => setModeOfPayment(e.target.value as 'Cash' | 'Card' | 'UPI')}
+                                                onChange={e => setModeOfPayment(e.target.value as 'Cash' | 'Card' | 'UPI' | 'Ward Use' | 'Pay Later')}
                                             >
                                                 <MenuItem value="Cash">Cash</MenuItem>
                                                 <MenuItem value="UPI">UPI</MenuItem>
                                                 <MenuItem value="Ward Use">Ward Use</MenuItem>
+                                                <MenuItem value="Pay Later">Pay Later</MenuItem>
                                                 <MenuItem value="Card" disabled>Card</MenuItem>
                                             </Select>
                                         </FormControl>
@@ -929,11 +930,11 @@ export const SellMedicine: React.FC = () => {
                     {printError && <Alert severity="error" sx={{ mt: 2 }}>{printError}</Alert>}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => handleSell(true)} color="primary" variant="contained" disabled={isSubmitting}>
+                    <Button onClick={() => handleSell(true)} color="primary" variant="contained" disabled={isSubmitting || modeOfPayment === 'Ward Use'}>
                         Complete With Print
                     </Button>
                     <Button onClick={() => handleSell(false)} color="success" variant="contained" disabled={isSubmitting}>
-                        Complete (No Print)
+                        {modeOfPayment === 'Ward Use' ? 'Complete Ward Use' : 'Complete (No Print)'}
                     </Button>
                     <Button onClick={() => setShowSellModal(false)} color="inherit" variant="outlined" disabled={isSubmitting}>
                         Cancel
