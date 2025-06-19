@@ -9,13 +9,15 @@ import {
     Box,
     Grid,
     Paper,
-    useTheme
+    useTheme,
+    Tooltip
 } from '@mui/material';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { format, isSameDay } from 'date-fns';
 import { sell } from '../types/sell';
 import { formatIndianCurrency } from '../utils/formatCurrency';
@@ -75,6 +77,9 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
         }, 0);
     const totalSales = cashTotal + upiTotal + cardTotal + wardUseTotal + payLaterTotal + otherTotal;
 
+    const upfrontPaymentsTotal = cashTotal + upiTotal + cardTotal;
+    const pendingPaymentsTotal = wardUseTotal + payLaterTotal;
+
     const formatDateRange = () => {
         if (isSameDay(fromDate, toDate)) {
             return format(fromDate, 'MMMM d, yyyy');
@@ -93,9 +98,25 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                         <Grid item xs={12}>
                             <Paper sx={cardStyles(isDark ? theme.palette.grey[800] : '#f5f5f5')}>
                                 <AttachMoneyIcon color="success" fontSize="medium" />
-                                <Typography variant="subtitle1" gutterBottom>
-                                    Total Sales: ₹{formatIndianCurrency(totalSales)}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                                    <Typography variant="subtitle1" gutterBottom>
+                                        Grand Total: ₹{formatIndianCurrency(totalSales)}
+                                    </Typography>
+                                    <Box>
+                                        <Typography variant="subtitle1" color="green" >
+                                            Paid: ₹{formatIndianCurrency(upfrontPaymentsTotal)}
+                                            <Tooltip title="Sum of Cash, UPI, and Card payments">
+                                                <InfoOutlinedIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            </Tooltip>
+                                        </Typography>
+                                        <Typography variant="body2" color="textSecondary" >
+                                            Pending: ₹{formatIndianCurrency(pendingPaymentsTotal)}
+                                            <Tooltip title="Sum of Ward Use and Pay Later payments">
+                                                <InfoOutlinedIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            </Tooltip>
+                                        </Typography>
+                                    </Box>
+                                </Box>
                             </Paper>
                         </Grid>
                         <Grid item xs={12}>
