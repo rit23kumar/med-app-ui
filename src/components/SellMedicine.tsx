@@ -783,6 +783,7 @@ export const SellMedicine: React.FC = () => {
                                             >
                                                 <MenuItem value="Cash">Cash</MenuItem>
                                                 <MenuItem value="UPI">UPI</MenuItem>
+                                                <MenuItem value="Ward Use">Ward Use</MenuItem>
                                                 <MenuItem value="Card" disabled>Card</MenuItem>
                                             </Select>
                                         </FormControl>
