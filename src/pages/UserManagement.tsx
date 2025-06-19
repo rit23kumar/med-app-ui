@@ -238,7 +238,7 @@ const UserManagement: React.FC = () => {
         </Typography>
         {creationSuccess && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{creationSuccess}</Alert>}
         {creationError && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{creationError}</Alert>}
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }} autoComplete="off">
           <TextField
             margin="normal"
             required
@@ -246,7 +246,7 @@ const UserManagement: React.FC = () => {
             id="fullName"
             label="Full Name"
             name="fullName"
-            autoComplete="name"
+            autoComplete="off"
             autoFocus
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -258,7 +258,7 @@ const UserManagement: React.FC = () => {
             id="username"
             label="Username"
             name="username"
-            autoComplete="username"
+            autoComplete="new-username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             inputProps={{ minLength: 3, maxLength: 8 }}

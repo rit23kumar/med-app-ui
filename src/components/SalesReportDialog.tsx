@@ -104,13 +104,13 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                                     </Typography>
                                     <Box>
                                         <Typography variant="subtitle1" color="green" >
-                                            Paid: ₹{formatIndianCurrency(upfrontPaymentsTotal)}
+                                            Paid Payments: ₹{formatIndianCurrency(upfrontPaymentsTotal)}
                                             <Tooltip title="Sum of Cash, UPI, and Card payments">
                                                 <InfoOutlinedIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             </Tooltip>
                                         </Typography>
                                         <Typography variant="body2" color="textSecondary" >
-                                            Pending: ₹{formatIndianCurrency(pendingPaymentsTotal)}
+                                            Pending Payments: ₹{formatIndianCurrency(pendingPaymentsTotal)}
                                             <Tooltip title="Sum of Ward Use and Pay Later payments">
                                                 <InfoOutlinedIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             </Tooltip>
