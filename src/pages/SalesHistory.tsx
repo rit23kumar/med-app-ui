@@ -17,6 +17,14 @@ import {
   Switch,
   FormControlLabel,
   Snackbar,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Checkbox,
+  ListItemText,
+  IconButton,
+  Menu,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -26,6 +34,9 @@ import { getSalesHistory } from "../services/historyService";
 import { sell, sellItem } from "../types/sell";
 import SalesReportDialog from "../components/SalesReportDialog";
 import { formatIndianCurrency } from "../utils/formatCurrency";
+import FilterListIcon from '@mui/icons-material/FilterList';
+
+const ALL_MODES = ["Cash", "UPI", "Card", "Ward Use", "Pay Later"];
 
 const SalesHistory: React.FC = () => {
   const today = new Date();
@@ -38,6 +49,9 @@ const SalesHistory: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [datesChanged, setDatesChanged] = useState(false);
+  const [selectedModes, setSelectedModes] = useState<string[]>(ALL_MODES);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const filterOpen = Boolean(anchorEl);
 
   const handleSearch = async () => {
     let searchFromDate = fromDate;
@@ -87,6 +101,18 @@ const SalesHistory: React.FC = () => {
   useEffect(() => {
     handleSearch();
   }, []);
+
+  // Filter sales by selected modes
+  const filteredSales = sales.filter(sale =>
+    !sale.modeOfPayment || selectedModes.includes(sale.modeOfPayment)
+  );
+
+  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleFilterClose = () => {
+    setAnchorEl(null);
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -190,7 +216,48 @@ const SalesHistory: React.FC = () => {
                 <TableCell>Date</TableCell>
                 <TableCell>Customer</TableCell>
                 <TableCell>Total Amount</TableCell>
-                <TableCell>Mode</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 500 }}>Mode</span>
+                    <IconButton
+                      size="small"
+                      onClick={handleFilterClick}
+                      sx={{ ml: 0.5, color: selectedModes.length < ALL_MODES.length ? 'primary.main' : 'inherit' }}
+                      aria-label="Filter Modes"
+                    >
+                      <FilterListIcon fontSize="small" />
+                    </IconButton>
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={filterOpen}
+                      onClose={handleFilterClose}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    >
+                      <FormControl sx={{ m: 1, minWidth: 180 }} size="small">
+                        <InputLabel id="mode-multiselect-label">Filter by Mode</InputLabel>
+                        <Select
+                          labelId="mode-multiselect-label"
+                          multiple
+                          value={selectedModes}
+                          onChange={e => {
+                            const value = e.target.value;
+                            setSelectedModes(typeof value === 'string' ? value.split(',') : value);
+                          }}
+                          renderValue={selected => (selected as string[]).join(', ')}
+                          label="Filter by Mode"
+                          size="small"
+                        >
+                          {ALL_MODES.map(mode => (
+                            <MenuItem key={mode} value={mode}>
+                              <Checkbox checked={selectedModes.indexOf(mode) > -1} />
+                              <ListItemText primary={mode} />
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Menu>
+                  </Box>
+                </TableCell>
                 <TableCell>Items</TableCell>
               </TableRow>
             </TableHead>
@@ -201,14 +268,14 @@ const SalesHistory: React.FC = () => {
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
-              ) : sales.length === 0 ? (
+              ) : filteredSales.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
                     No sales records found
                   </TableCell>
                 </TableRow>
               ) : (
-                sales.map((sale) => (
+                filteredSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell>
                       {format(new Date(sale.date), "dd/MM/yy HH:mm")}
