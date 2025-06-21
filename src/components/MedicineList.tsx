@@ -38,6 +38,9 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import debounce from 'lodash/debounce';
 import { FirstPage as FirstPageIcon, KeyboardArrowLeft, KeyboardArrowRight, LastPage as LastPageIcon } from '@mui/icons-material';
 import MedicineDetailsDialog from './MedicineDetailsDialog';
+import ExpiringMedicinesDialog from './ExpiringMedicinesDialog';
+import { StockHistory } from '../types/medicine';
+import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
 
 interface PaginationActionsProps {
     count: number;
@@ -184,6 +187,9 @@ export const MedicineList: React.FC = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [selectedMedicineId, setSelectedMedicineId] = useState<number | null>(null);
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+    const [expiringDialogOpen, setExpiringDialogOpen] = useState(false);
+    const [expiringMedicines, setExpiringMedicines] = useState<StockHistory[]>([]);
+    const [loadingExpiring, setLoadingExpiring] = useState(false);
 
     const fetchMedicines = async (search?: string) => {
         try {
@@ -247,6 +253,20 @@ export const MedicineList: React.FC = () => {
         setDetailsDialogOpen(true);
     };
 
+    const handleShowExpiring = async () => {
+        setLoadingExpiring(true);
+        setExpiringDialogOpen(true);
+        try {
+            const data = await medicineApi.getExpiringMedicines();
+            setExpiringMedicines(data);
+        } catch (error) {
+            console.error("Error fetching expiring medicines:", error);
+            setExpiringMedicines([]);
+        } finally {
+            setLoadingExpiring(false);
+        }
+    };
+
     return (
         <Box>
             <Box 
@@ -273,6 +293,14 @@ export const MedicineList: React.FC = () => {
                     >
                         Medicine Inventory
                     </Typography>
+                    <Button
+                        variant="outlined"
+                        startIcon={<NotificationImportantIcon />}
+                        onClick={handleShowExpiring}
+                        size={isMobile ? 'small' : 'medium'}
+                    >
+                        Show Expiring
+                    </Button>
                 </Box>
             </Box>
             
@@ -553,6 +581,13 @@ export const MedicineList: React.FC = () => {
                     medicineId={selectedMedicineId}
                 />
             )}
+
+            <ExpiringMedicinesDialog
+                open={expiringDialogOpen}
+                onClose={() => setExpiringDialogOpen(false)}
+                medicines={expiringMedicines}
+                loading={loadingExpiring}
+            />
         </Box>
     );
 }; 

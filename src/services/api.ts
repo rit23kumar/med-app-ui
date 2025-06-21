@@ -60,6 +60,11 @@ export const medicineApi = {
         const response = await apiClient.put(`/medicines/stock/${batchId}`, data);
         return response.data;
     },
+
+    getExpiringMedicines: async (): Promise<StockHistory[]> => {
+        const response = await apiClient.get('/medicines/stock/expiring');
+        return response.data;
+    },
 };
 
 export const sellApi = {
