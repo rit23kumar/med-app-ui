@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Box,
@@ -19,7 +19,15 @@ import {
   Divider,
   alpha,
   CssBaseline,
-  Avatar
+  Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
+  CircularProgress,
+  Modal,
 } from '@mui/material';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
@@ -37,6 +45,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { useThemeContext } from '../theme/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { userApi } from '../api/userApi';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -54,8 +63,23 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { mode, toggleColorMode } = useThemeContext();
-  const { isAuthenticated, isAdmin, user, logout } = useAuth();
+  const { isAuthenticated, isAdmin, user, logout, login } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
+  const [changePasswordSuccess, setChangePasswordSuccess] = useState<string | null>(null);
+
+  // Handle focus management when dialog opens
+  useEffect(() => {
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [changePasswordDialogOpen]);
 
   const menuItems: MenuItem[] = [
     { text: 'Sales', path: '/', icon: <ShoppingCartIcon />, role: 'USER' },
@@ -82,8 +106,69 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleChangePassword = () => {
-    navigate('/user-management');
+    setChangePasswordDialogOpen(true);
     setDrawerOpen(false);
+  };
+
+  const handleCloseChangePasswordDialog = () => {
+    setChangePasswordDialogOpen(false);
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setChangePasswordError(null);
+    setChangePasswordSuccess(null);
+    // Ensure body scroll is restored
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleConfirmChangePassword = async () => {
+    setChangePasswordLoading(true);
+    setChangePasswordError(null);
+    setChangePasswordSuccess(null);
+
+    // Validation
+    if (!oldPassword || !newPassword || !confirmNewPassword) {
+      setChangePasswordError('All fields are required.');
+      setChangePasswordLoading(false);
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setChangePasswordError('New passwords do not match.');
+      setChangePasswordLoading(false);
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setChangePasswordError('New password must be at least 6 characters long.');
+      setChangePasswordLoading(false);
+      return;
+    }
+
+    try {
+      // First verify old password by attempting to login
+      await login(user?.username || '', oldPassword);
+      
+      // If login succeeds, change the password
+      if (user?.id) {
+        await userApi.changeUserPassword(user.id, newPassword);
+        setChangePasswordSuccess('Password changed successfully!');
+        
+        // Clear form after success
+        setTimeout(() => {
+          handleCloseChangePasswordDialog();
+        }, 2000);
+      }
+    } catch (err: any) {
+      console.error('Error changing password:', err);
+      if (err.message?.includes('Invalid credentials')) {
+        setChangePasswordError('Current password is incorrect.');
+      } else {
+        setChangePasswordError(err.message || 'Failed to change password.');
+      }
+    } finally {
+      setChangePasswordLoading(false);
+    }
   };
 
   const isMenuItemVisible = (item: MenuItem) => {
@@ -301,6 +386,85 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         {drawer}
       </Drawer>
+      <Modal
+        open={changePasswordDialogOpen}
+        onClose={handleCloseChangePasswordDialog}
+        aria-labelledby="change-password-modal-title"
+        aria-describedby="change-password-modal-description"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: '1400'
+        }}
+      >
+        <Paper sx={{ p: 4, width: '100%', maxWidth: 500, outline: 'none' }}>
+          <Typography id="change-password-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
+            Change Password
+          </Typography>
+          <Box id="change-password-modal-description">
+            {changePasswordSuccess && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {changePasswordSuccess}
+              </Alert>
+            )}
+            {changePasswordError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {changePasswordError}
+              </Alert>
+            )}
+            <TextField
+              margin="dense"
+              label="Current Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              disabled={changePasswordLoading}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="dense"
+              label="New Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={changePasswordLoading}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="dense"
+              label="Confirm New Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              disabled={changePasswordLoading}
+              sx={{ mb: 2 }}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+            <Button 
+              onClick={handleCloseChangePasswordDialog} 
+              disabled={changePasswordLoading}
+              sx={{ mr: 1 }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmChangePassword} 
+              variant="contained"
+              disabled={changePasswordLoading}
+            >
+              {changePasswordLoading ? <CircularProgress size={20} /> : 'Change Password'}
+            </Button>
+          </Box>
+        </Paper>
+      </Modal>
       <Toolbar /> {/* This is for spacing below the fixed AppBar */}
       <Box
         component="main"
