@@ -120,7 +120,7 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                                             <Tooltip 
                                                 title={entry.quantity === entry.availableQuantity 
                                                     ? "Delete this batch" 
-                                                    : "Cannot delete - items have been sold from this batch"
+                                                    : "Cannot delete - items have been sold from this batch. Use edit instead."
                                                 }
                                             >
                                                 <span>

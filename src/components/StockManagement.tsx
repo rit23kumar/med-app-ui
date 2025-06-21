@@ -43,6 +43,7 @@ interface EditBatchState {
     availableQuantity: string;
     price: string;
   };
+  error?: string | null;
 }
 
 const StockManagement: React.FC = () => {
@@ -74,6 +75,7 @@ const StockManagement: React.FC = () => {
     open: false,
     batch: null,
     data: { purchasedQuantity: "", availableQuantity: "", price: "" },
+    error: null,
   });
 
   // Calculate total available quantity
@@ -351,23 +353,40 @@ const StockManagement: React.FC = () => {
         availableQuantity: String(batch.availableQuantity),
         price: String(batch.price),
       },
+      error: null,
     });
   };
 
   const handleCloseEditDialog = () => {
-    setEditBatch({ open: false, batch: null, data: { purchasedQuantity: "", availableQuantity: "", price: "" } });
+    setEditBatch({ open: false, batch: null, data: { purchasedQuantity: "", availableQuantity: "", price: "" }, error: null });
   };
 
   const handleEditFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    setEditBatch(prev => ({
-      ...prev,
-      data: { ...prev.data, [name]: value }
-    }));
+    setEditBatch(prev => {
+      const newData = { ...prev.data, [name]: value };
+
+      const purchased = parseInt(newData.purchasedQuantity, 10);
+      const available = parseInt(newData.availableQuantity, 10);
+
+      let error: string | null = null;
+      if (!isNaN(purchased) && !isNaN(available) && available > purchased) {
+        error = "Available quantity cannot be greater than purchased quantity.";
+      }
+
+      return {
+        ...prev,
+        data: newData,
+        error: error,
+      };
+    });
   };
 
   const handleConfirmEdit = async () => {
-    if (!editBatch.batch) return;
+    if (!editBatch.batch || editBatch.error) {
+      if(editBatch.error) showNotification("Please fix the validation errors before saving.", "error");
+      return;
+    }
 
     try {
       const updatedData = {
@@ -380,9 +399,9 @@ const StockManagement: React.FC = () => {
       showNotification("Batch updated successfully", "success");
       handleCloseEditDialog();
       loadStockHistory(selectedMedicine?.id || 0);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating batch:", error);
-      showNotification("Failed to update batch", "error");
+      showNotification(error.response?.data?.message || "Failed to update batch", "error");
     }
   };
 
@@ -740,6 +759,8 @@ const StockManagement: React.FC = () => {
               variant="outlined"
               value={editBatch.data.availableQuantity}
               onChange={handleEditFormChange}
+              error={!!editBatch.error}
+              helperText={editBatch.error}
             />
             <TextField
               margin="dense"
@@ -754,7 +775,7 @@ const StockManagement: React.FC = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseEditDialog}>Cancel</Button>
-            <Button onClick={handleConfirmEdit} variant="contained">Save Changes</Button>
+            <Button onClick={handleConfirmEdit} variant="contained" disabled={!!editBatch.error}>Save Changes</Button>
           </DialogActions>
         </Dialog>
       </Box>
