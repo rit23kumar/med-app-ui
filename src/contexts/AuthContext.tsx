@@ -25,6 +25,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    const isAuthenticatedInSession = sessionStorage.getItem('isAuthenticated');
+    
+    // If there's no session authentication flag but we have stored user data,
+    // it means another tab logged out, so we should clear this session too
+    if (!isAuthenticatedInSession && storedUser) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      setUser(null);
+      setToken(null);
+      return;
+    }
+    
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
@@ -33,6 +45,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        sessionStorage.removeItem('isAuthenticated');
+        sessionStorage.removeItem('activeTab');
+        sessionStorage.removeItem('tabClosing');
       }
     }
   }, []);
@@ -58,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userObj));
+      sessionStorage.setItem('isAuthenticated', 'true');
       
       setToken(token);
       setUser(userObj);
@@ -70,6 +86,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    
+    // Clear all session storage related to authentication and tabs
+    sessionStorage.removeItem('isAuthenticated');
+    sessionStorage.removeItem('activeTab');
+    sessionStorage.removeItem('tabClosing');
+    
+    // Clear any tab-specific storage items
+    Object.keys(sessionStorage).forEach(key => {
+      if (key.startsWith('tab_') && (key.includes('_active') || key.includes('_heartbeat'))) {
+        sessionStorage.removeItem(key);
+      }
+    });
+    
     setToken(null);
     setUser(null);
   };

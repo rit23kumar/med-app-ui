@@ -7,6 +7,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AppRoutes } from './routes';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { IdleTimeoutWarning } from './components/IdleTimeoutWarning';
+import TabCloseHandler from './components/TabCloseHandler';
 
 const AppContent: React.FC = () => {
     const { isAuthenticated, user } = useAuth();
@@ -19,6 +20,7 @@ const AppContent: React.FC = () => {
                     timeoutTime={150} // 2.5 minutes for all users
                 />
             )}
+            <TabCloseHandler />
             <AppRoutes />
         </>
     );
