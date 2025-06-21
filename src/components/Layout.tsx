@@ -18,7 +18,8 @@ import {
   ListItemButton,
   Divider,
   alpha,
-  CssBaseline
+  CssBaseline,
+  Avatar
 } from '@mui/material';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
@@ -32,6 +33,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import HistoryIcon from '@mui/icons-material/History';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import LogoutIcon from '@mui/icons-material/Logout';
+import LockIcon from '@mui/icons-material/Lock';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { useThemeContext } from '../theme/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -76,6 +78,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+    setDrawerOpen(false);
+  };
+
+  const handleChangePassword = () => {
+    navigate('/user-management');
     setDrawerOpen(false);
   };
 
@@ -137,6 +144,46 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </ListItem>
           )
         ))}
+        {isAuthenticated && user && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Avatar sx={{ 
+                width: 56, 
+                height: 56, 
+                mx: 'auto', 
+                mb: 1,
+                bgcolor: theme.palette.primary.main,
+                fontSize: '1.5rem'
+              }}>
+                {user.fullName.charAt(0).toUpperCase()}
+              </Avatar>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                {user.fullName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {user.role}
+              </Typography>
+            </Box>
+            <Divider sx={{ my: 1 }} />
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleChangePassword}>
+                <ListItemIcon sx={{ color: theme.palette.text.secondary }}>
+                  <LockIcon />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Change Password" 
+                  sx={{
+                    '& .MuiTypography-root': {
+                      color: theme.palette.text.primary,
+                      fontWeight: 400
+                    }
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          </>
+        )}
         {isAuthenticated && (
           <>
             <Divider sx={{ my: 1 }} />
