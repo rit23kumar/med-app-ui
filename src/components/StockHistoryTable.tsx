@@ -12,7 +12,8 @@ import {
     CircularProgress,
     Chip,
     IconButton,
-    alpha
+    alpha,
+    Tooltip
 } from '@mui/material';
 import { StockHistory } from '../types/medicine';
 import { format, differenceInDays } from 'date-fns';
@@ -104,18 +105,29 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                                 <TableCell>₹{formatIndianCurrency(entry.price)}</TableCell>
                                 {onDeleteBatch && (
                                     <TableCell align="right">
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => onDeleteBatch(entry.id)}
-                                            sx={{
-                                                color: 'error.main',
-                                                '&:hover': {
-                                                    backgroundColor: alpha('#f44336', 0.1)
-                                                }
-                                            }}
+                                        <Tooltip 
+                                            title={entry.quantity === entry.availableQuantity 
+                                                ? "Delete this batch" 
+                                                : "Cannot delete - items have been sold from this batch"
+                                            }
                                         >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => onDeleteBatch(entry.id)}
+                                                disabled={entry.quantity !== entry.availableQuantity}
+                                                sx={{
+                                                    color: entry.quantity === entry.availableQuantity ? 'error.main' : 'text.disabled',
+                                                    '&:hover': {
+                                                        backgroundColor: entry.quantity === entry.availableQuantity ? alpha('#f44336', 0.1) : 'transparent'
+                                                    },
+                                                    '&.Mui-disabled': {
+                                                        color: 'text.disabled'
+                                                    }
+                                                }}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
                                     </TableCell>
                                 )}
                             </TableRow>
