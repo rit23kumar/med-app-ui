@@ -1,7 +1,7 @@
 import { Medicine } from './medicine';
 
 export interface sellItem {
-    id?: number;
+    id: number;
     medicine: Medicine;
     quantity: number;
     price: number;
@@ -10,7 +10,7 @@ export interface sellItem {
 }
 
 export interface sell {
-    id?: number;
+    id: number;
     date: string;
     customer?: string;
     totalAmount: number;

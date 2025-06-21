@@ -23,7 +23,8 @@ import {
     MenuItem,
     Select,
     InputLabel,
-    FormControl
+    FormControl,
+    AutocompleteRenderInputParams
 } from '@mui/material';
 import { Medicine, StockHistory } from '../types/medicine';
 import { CreateSellRequest } from '../types/sell';
@@ -579,11 +580,12 @@ export const SellMedicine: React.FC = () => {
                 <Grid container spacing={3}>
                     <Grid item xs={12}>
                         <Autocomplete
+                            sx={{ zIndex: 1399 }}
                             options={medicines}
-                            getOptionLabel={(option) => option.name}
+                            getOptionLabel={(option: Medicine) => option.name}
                             value={selectedMedicine}
-                            onChange={(_, newValue) => setSelectedMedicine(newValue)}
-                            renderInput={(params) => (
+                            onChange={(_, newValue: Medicine | null) => setSelectedMedicine(newValue)}
+                            renderInput={(params: AutocompleteRenderInputParams) => (
                                 <TextField
                                     {...params}
                                     label="Select Medicine"

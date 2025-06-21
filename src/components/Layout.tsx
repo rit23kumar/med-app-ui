@@ -271,7 +271,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         )}
         {isAuthenticated && (
           <>
-            <Divider sx={{ my: 1 }} />
             <ListItem disablePadding>
               <ListItemButton onClick={handleLogout}>
                 <ListItemIcon sx={{ color: theme.palette.text.secondary }}>

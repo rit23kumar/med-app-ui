@@ -25,16 +25,22 @@ import {
   ListItemText,
   IconButton,
   Menu,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { format } from "date-fns";
-import { getSalesHistory } from "../services/historyService";
+import { getSalesHistory, deleteSell } from "../services/historyService";
 import { sell, sellItem } from "../types/sell";
 import SalesReportDialog from "../components/SalesReportDialog";
 import { formatIndianCurrency } from "../utils/formatCurrency";
 import FilterListIcon from '@mui/icons-material/FilterList';
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const ALL_MODES = ["Cash", "UPI", "Card", "Ward Use", "Pay Later"];
 
@@ -52,6 +58,12 @@ const SalesHistory: React.FC = () => {
   const [selectedModes, setSelectedModes] = useState<string[]>(ALL_MODES);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const filterOpen = Boolean(anchorEl);
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [saleToDelete, setSaleToDelete] = useState<sell | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
 
   const handleSearch = async () => {
     let searchFromDate = fromDate;
@@ -112,6 +124,35 @@ const SalesHistory: React.FC = () => {
   };
   const handleFilterClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleDeleteClick = (sale: sell) => {
+    setSaleToDelete(sale);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleCloseDeleteConfirm = () => {
+    if (deleteLoading) return;
+    setSaleToDelete(null);
+    setDeleteConfirmOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!saleToDelete) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      await deleteSell(saleToDelete.id);
+      setDeleteSuccess(`Sale IN${saleToDelete.id} deleted successfully!`);
+      handleCloseDeleteConfirm();
+      // Refresh list
+      handleSearch();
+    } catch (err: any) {
+      setDeleteError(err.response?.data?.message || 'Failed to delete sale.');
+      console.error("Error deleting sale:", err);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -209,6 +250,18 @@ const SalesHistory: React.FC = () => {
           </Alert>
         </Snackbar>
 
+        <Snackbar open={!!deleteSuccess} autoHideDuration={6000} onClose={() => setDeleteSuccess(null)}>
+            <Alert onClose={() => setDeleteSuccess(null)} severity="success" sx={{ width: '100%' }}>
+                {deleteSuccess}
+            </Alert>
+        </Snackbar>
+
+        <Snackbar open={!!deleteError} autoHideDuration={10000} onClose={() => setDeleteError(null)}>
+            <Alert onClose={() => setDeleteError(null)} severity="error" sx={{ width: '100%' }}>
+                {deleteError}
+            </Alert>
+        </Snackbar>
+
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -260,6 +313,7 @@ const SalesHistory: React.FC = () => {
                 </TableCell>
                 <TableCell>Created By</TableCell>
                 <TableCell>Items</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -323,6 +377,11 @@ const SalesHistory: React.FC = () => {
                         </div>
                       ))}
                     </TableCell>
+                    <TableCell>
+                      <IconButton onClick={() => handleDeleteClick(sale)} color="error" size="small">
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -337,6 +396,25 @@ const SalesHistory: React.FC = () => {
           fromDate={singleDateMode ? date : fromDate}
           toDate={singleDateMode ? date : toDate}
         />
+
+        <Dialog open={deleteConfirmOpen} onClose={handleCloseDeleteConfirm}>
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this sale record (Invoice No: IN{saleToDelete?.id})? 
+              This will restore the stock quantities. This action cannot be undone.
+            </DialogContentText>
+            {deleteError && <Alert severity="error" sx={{mt: 2}}>{deleteError}</Alert>}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteConfirm} disabled={deleteLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmDelete} color="error" disabled={deleteLoading}>
+              {deleteLoading ? <CircularProgress size={24} /> : 'Delete'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </LocalizationProvider>
   );
