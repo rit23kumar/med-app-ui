@@ -32,11 +32,14 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Clear local storage
+      // Session expired
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      
-      // Redirect to login page
+      window.location.href = '/login';
+    } else if (error.response?.status === 403) {
+      // Forbidden - redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);

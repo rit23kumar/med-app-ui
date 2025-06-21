@@ -2,8 +2,6 @@ import apiClient from '../api/axiosConfig';
 import { Medicine, MedicineWithStock, PageResponse, BatchMedicineResponse, StockHistory } from '../types/medicine';
 import { sell, CreateSellRequest } from '../types/sell';
 
-// const API_BASE_URL = '/api';
-// const API_BASE_URL = 'http://localhost:8080/api';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export const medicineApi = {
