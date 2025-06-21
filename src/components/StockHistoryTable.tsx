@@ -19,11 +19,13 @@ import { StockHistory } from '../types/medicine';
 import { format, differenceInDays } from 'date-fns';
 import { formatIndianCurrency } from '../utils/formatCurrency';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 
 interface StockHistoryTableProps {
     stockHistory: StockHistory[];
     loading: boolean;
     onDeleteBatch?: (batchId: number) => void;
+    onEditBatch?: (batch: StockHistory) => void;
 }
 
 const getRemainingDaysColor = (days: number): string => {
@@ -44,7 +46,7 @@ const formatExpiryText = (expDate: string) => {
     return `${formattedDate} (${remainingDays} Days Remaining)`;
 };
 
-const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loading, onDeleteBatch }) => {
+const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loading, onDeleteBatch, onEditBatch }) => {
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" p={3}>
@@ -82,7 +84,7 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                         <TableCell>Purchased</TableCell>
                         <TableCell>Available</TableCell>
                         <TableCell>Price</TableCell>
-                        {onDeleteBatch && <TableCell align="right">Actions</TableCell>}
+                        {(onDeleteBatch || onEditBatch) && <TableCell align="right">Actions</TableCell>}
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -103,31 +105,35 @@ const StockHistoryTable: React.FC<StockHistoryTableProps> = ({ stockHistory, loa
                                 <TableCell>{entry.quantity}</TableCell>
                                 <TableCell>{entry.availableQuantity}</TableCell>
                                 <TableCell>₹{formatIndianCurrency(entry.price)}</TableCell>
-                                {onDeleteBatch && (
+                                {(onDeleteBatch || onEditBatch) && (
                                     <TableCell align="right">
-                                        <Tooltip 
-                                            title={entry.quantity === entry.availableQuantity 
-                                                ? "Delete this batch" 
-                                                : "Cannot delete - items have been sold from this batch"
-                                            }
-                                        >
+                                        {onEditBatch && (
                                             <IconButton
                                                 size="small"
-                                                onClick={() => onDeleteBatch(entry.id)}
-                                                disabled={entry.quantity !== entry.availableQuantity}
-                                                sx={{
-                                                    color: entry.quantity === entry.availableQuantity ? 'error.main' : 'text.disabled',
-                                                    '&:hover': {
-                                                        backgroundColor: entry.quantity === entry.availableQuantity ? alpha('#f44336', 0.1) : 'transparent'
-                                                    },
-                                                    '&.Mui-disabled': {
-                                                        color: 'text.disabled'
-                                                    }
-                                                }}
+                                                onClick={() => onEditBatch(entry)}
+                                                sx={{ mr: 1, color: 'primary.main' }}
                                             >
-                                                <DeleteIcon fontSize="small" />
+                                                <EditIcon fontSize="small" />
                                             </IconButton>
-                                        </Tooltip>
+                                        )}
+                                        {onDeleteBatch && (
+                                            <Tooltip 
+                                                title={entry.quantity === entry.availableQuantity 
+                                                    ? "Delete this batch" 
+                                                    : "Cannot delete - items have been sold from this batch"
+                                                }
+                                            >
+                                                <span>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => onDeleteBatch(entry.id)}
+                                                        disabled={entry.quantity !== entry.availableQuantity}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                        )}
                                     </TableCell>
                                 )}
                             </TableRow>

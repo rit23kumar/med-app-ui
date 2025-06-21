@@ -35,6 +35,16 @@ import InfoIcon from "@mui/icons-material/Info";
 import Tooltip from "@mui/material/Tooltip";
 import { formatIndianCurrency } from "../utils/formatCurrency";
 
+interface EditBatchState {
+  open: boolean;
+  batch: StockHistory | null;
+  data: {
+    purchasedQuantity: string;
+    availableQuantity: string;
+    price: string;
+  };
+}
+
 const StockManagement: React.FC = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
@@ -60,6 +70,11 @@ const StockManagement: React.FC = () => {
   });
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [batchToDeleteId, setBatchToDeleteId] = useState<number | null>(null);
+  const [editBatch, setEditBatch] = useState<EditBatchState>({
+    open: false,
+    batch: null,
+    data: { purchasedQuantity: "", availableQuantity: "", price: "" },
+  });
 
   // Calculate total available quantity
   const totalAvailable = useMemo(() => {
@@ -327,6 +342,50 @@ const StockManagement: React.FC = () => {
     }
   };
 
+  const handleOpenEditDialog = (batch: StockHistory) => {
+    setEditBatch({
+      open: true,
+      batch,
+      data: {
+        purchasedQuantity: String(batch.quantity),
+        availableQuantity: String(batch.availableQuantity),
+        price: String(batch.price),
+      },
+    });
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditBatch({ open: false, batch: null, data: { purchasedQuantity: "", availableQuantity: "", price: "" } });
+  };
+
+  const handleEditFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setEditBatch(prev => ({
+      ...prev,
+      data: { ...prev.data, [name]: value }
+    }));
+  };
+
+  const handleConfirmEdit = async () => {
+    if (!editBatch.batch) return;
+
+    try {
+      const updatedData = {
+        quantity: parseInt(editBatch.data.purchasedQuantity, 10),
+        availableQuantity: parseInt(editBatch.data.availableQuantity, 10),
+        price: parseFloat(editBatch.data.price),
+      };
+
+      await medicineApi.updateStockBatch(editBatch.batch.id, updatedData);
+      showNotification("Batch updated successfully", "success");
+      handleCloseEditDialog();
+      loadStockHistory(selectedMedicine?.id || 0);
+    } catch (error) {
+      console.error("Error updating batch:", error);
+      showNotification("Failed to update batch", "error");
+    }
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 3 }}>
@@ -440,6 +499,7 @@ const StockManagement: React.FC = () => {
                 stockHistory={stockHistory}
                 loading={loadingHistory}
                 onDeleteBatch={handleDeleteBatch}
+                onEditBatch={handleOpenEditDialog}
               />
             </Paper>
           )}
@@ -650,6 +710,51 @@ const StockManagement: React.FC = () => {
             <Button onClick={handleConfirmDelete} color="error" autoFocus>
               Delete
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Batch Dialog */}
+        <Dialog open={editBatch.open} onClose={handleCloseEditDialog}>
+          <DialogTitle>Edit Batch #{editBatch.batch?.id}</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{mb: 2}}>
+              Modify the details for this stock batch. Expiration Date: {editBatch.batch ? format(new Date(editBatch.batch.expDate), 'dd-MMM-yyyy') : ''}
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="dense"
+              name="purchasedQuantity"
+              label="Purchased Quantity"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={editBatch.data.purchasedQuantity}
+              onChange={handleEditFormChange}
+            />
+            <TextField
+              margin="dense"
+              name="availableQuantity"
+              label="Available Quantity"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={editBatch.data.availableQuantity}
+              onChange={handleEditFormChange}
+            />
+            <TextField
+              margin="dense"
+              name="price"
+              label="Price"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={editBatch.data.price}
+              onChange={handleEditFormChange}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseEditDialog}>Cancel</Button>
+            <Button onClick={handleConfirmEdit} variant="contained">Save Changes</Button>
           </DialogActions>
         </Dialog>
       </Box>

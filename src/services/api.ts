@@ -54,7 +54,12 @@ export const medicineApi = {
 
     deleteStockBatch: async (batchId: number): Promise<void> => {
         await apiClient.delete(`/medicines/stock/${batchId}`);
-    }
+    },
+
+    updateStockBatch: async (batchId: number, data: Partial<StockHistory>): Promise<StockHistory> => {
+        const response = await apiClient.put(`/medicines/stock/${batchId}`, data);
+        return response.data;
+    },
 };
 
 export const sellApi = {
