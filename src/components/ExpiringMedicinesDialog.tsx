@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -21,6 +21,7 @@ import {
 import { StockHistory } from '../types/medicine';
 import { format, differenceInDays } from 'date-fns';
 import { formatIndianCurrency } from '../utils/formatCurrency';
+import { medicineApi } from '../services/api';
 
 interface ExpiringMedicinesDialogProps {
     open: boolean;
@@ -84,55 +85,119 @@ const ExpiringMedicineItem: React.FC<{ item: StockHistory }> = ({ item }) => {
 };
 
 const ExpiringMedicinesDialog: React.FC<ExpiringMedicinesDialogProps> = ({ open, onClose, medicines, loading }) => {
+    const [showExpired, setShowExpired] = useState(false);
+    const [expiredMedicines, setExpiredMedicines] = useState<StockHistory[]>([]);
+    const [loadingExpired, setLoadingExpired] = useState(false);
+
     const expiringIn30Days = medicines.filter(m => getRemainingDays(m.expDate) <= 30).sort((a,b) => getRemainingDays(a.expDate) - getRemainingDays(b.expDate));
     const expiringIn90Days = medicines.filter(m => {
         const days = getRemainingDays(m.expDate);
         return days > 30 && days <= 90;
     }).sort((a,b) => getRemainingDays(a.expDate) - getRemainingDays(b.expDate));
 
+    const handleShowExpired = async () => {
+        if (expiredMedicines.length === 0 && !loadingExpired) {
+            setLoadingExpired(true);
+            try {
+                const data = await medicineApi.getExpiredMedicines();
+                setExpiredMedicines(data);
+            } catch (error) {
+                console.error("Error fetching expired medicines:", error);
+                setExpiredMedicines([]);
+            } finally {
+                setLoadingExpired(false);
+            }
+        }
+        setShowExpired(true);
+    };
+
+    const handleClose = () => {
+        setShowExpired(false);
+        onClose();
+    };
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ fontWeight: 500, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                Expiring Medicines
-                <Chip label={`${medicines.length} items`} color="primary" />
+                {showExpired ? 'Expired Medicines' : 'Expiring Medicines'}
+                <Chip label={`${showExpired ? expiredMedicines.length : medicines.length} items`} color="primary" />
             </DialogTitle>
             <DialogContent dividers>
-                {loading ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: '300px' }}>
-                        <CircularProgress />
-                    </Box>
-                ) : medicines.length === 0 ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: '100px' }}>
-                        <Typography variant="h6" color="text.secondary">No medicines expiring soon.</Typography>
-                    </Box>
+                {showExpired ? (
+                    loadingExpired ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: '300px' }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : expiredMedicines.length === 0 ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: '100px' }}>
+                            <Typography variant="h6" color="text.secondary">No expired medicines found.</Typography>
+                        </Box>
+                    ) : (
+                        <Box>
+                            <Typography variant="h6" color="error" gutterBottom sx={{ fontWeight: 500 }}>
+                                Expired Medicines
+                            </Typography>
+                            {expiredMedicines.map(item => (
+                                <ExpiringMedicineItem key={item.id} item={item} />
+                            ))}
+                        </Box>
+                    )
                 ) : (
-                    <>
-                        {expiringIn30Days.length > 0 && (
-                            <Box mb={3}>
-                                <Typography variant="h6" color="error" gutterBottom sx={{ fontWeight: 500 }}>
-                                    Expiring in 30 Days or Less
-                                </Typography>
-                                {expiringIn30Days.map(item => (
-                                    <ExpiringMedicineItem key={item.id} item={item} />
-                                ))}
-                            </Box>
-                        )}
-                        
-                        {expiringIn90Days.length > 0 && (
-                            <Box>
-                                <Typography variant="h6" color="warning.main" gutterBottom sx={{ fontWeight: 500 }}>
-                                    Expiring in 31-90 Days
-                                </Typography>
-                                {expiringIn90Days.map(item => (
-                                    <ExpiringMedicineItem key={item.id} item={item} />
-                                ))}
-                            </Box>
-                        )}
-                    </>
+                    loading ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: '300px' }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : medicines.length === 0 ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: '100px' }}>
+                            <Typography variant="h6" color="text.secondary">No medicines expiring soon.</Typography>
+                        </Box>
+                    ) : (
+                        <>
+                            {expiringIn30Days.length > 0 && (
+                                <Box mb={3}>
+                                    <Typography variant="h6" color="error" gutterBottom sx={{ fontWeight: 500 }}>
+                                        Expiring in 30 Days or Less
+                                    </Typography>
+                                    {expiringIn30Days.map(item => (
+                                        <ExpiringMedicineItem key={item.id} item={item} />
+                                    ))}
+                                </Box>
+                            )}
+                            
+                            {expiringIn90Days.length > 0 && (
+                                <Box>
+                                    <Typography variant="h6" color="warning.main" gutterBottom sx={{ fontWeight: 500 }}>
+                                        Expiring in 31-90 Days
+                                    </Typography>
+                                    {expiringIn90Days.map(item => (
+                                        <ExpiringMedicineItem key={item.id} item={item} />
+                                    ))}
+                                </Box>
+                            )}
+                        </>
+                    )
                 )}
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose} variant="contained">Close</Button>
+                {!showExpired && (
+                    <Button 
+                        onClick={handleShowExpired} 
+                        variant="outlined" 
+                        color="error"
+                        disabled={loadingExpired}
+                    >
+                        Show Expired
+                    </Button>
+                )}
+                {showExpired && (
+                    <Button 
+                        onClick={() => setShowExpired(false)} 
+                        variant="outlined"
+                    >
+                        Back to Expiring
+                    </Button>
+                )}
+                <Button onClick={handleClose} variant="contained">Close</Button>
             </DialogActions>
         </Dialog>
     );

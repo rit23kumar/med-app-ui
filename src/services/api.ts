@@ -65,6 +65,11 @@ export const medicineApi = {
         const response = await apiClient.get('/medicines/stock/expiring');
         return response.data;
     },
+
+    getExpiredMedicines: async (): Promise<StockHistory[]> => {
+        const response = await apiClient.get('/medicines/stock/expired');
+        return response.data;
+    },
 };
 
 export const sellApi = {
