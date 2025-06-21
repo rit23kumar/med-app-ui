@@ -80,6 +80,7 @@ export const SellMedicine: React.FC = () => {
     const quantityRefs = React.useRef<{ [batchId: number]: HTMLInputElement | null }>({});
     const [modeOfPayment, setModeOfPayment] = useState<'Cash' | 'Card' | 'UPI' | 'Ward Use' | 'Pay Later'>('Cash');
     const [utrNumber, setUtrNumber] = useState<string>('');
+    const [amountPaid, setAmountPaid] = useState<string>('');
 
     const medicineAutocompleteRef = useRef<HTMLInputElement>(null);
 
@@ -324,6 +325,7 @@ export const SellMedicine: React.FC = () => {
                 customer: customer || undefined,
                 modeOfPayment,
                 utrNumber: modeOfPayment === 'UPI' ? utrNumber : undefined,
+                amountPaid: amountPaid ? parseFloat(amountPaid) : undefined,
                 items: sellItems.map(item => ({
                     medicineId: item.medicineId,
                     quantity: item.quantity,
@@ -346,6 +348,7 @@ export const SellMedicine: React.FC = () => {
             setSelectedBatches({});
             setShowSellModal(false);
             setUtrNumber('');
+            setAmountPaid('');
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || 
                 error.response?.data?.error || 
@@ -929,6 +932,32 @@ export const SellMedicine: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
+                    
+                    <Box sx={{ mt: 3, p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 1 }}>
+                        <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} sm={6}>
+                                <Typography variant="h6" gutterBottom>
+                                    Total Amount: ₹{formatIndianCurrency(calculateTotal())}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField
+                                    label="Amount Paid"
+                                    type="number"
+                                    value={amountPaid}
+                                    onChange={(e) => setAmountPaid(e.target.value)}
+                                    size="small"
+                                    fullWidth
+                                    inputProps={{
+                                        min: 0,
+                                        step: 0.01
+                                    }}
+                                    placeholder={`₹${formatIndianCurrency(calculateTotal())}`}
+                                />
+                            </Grid>
+                        </Grid>
+                    </Box>
+                    
                     {printError && <Alert severity="error" sx={{ mt: 2 }}>{printError}</Alert>}
                 </DialogContent>
                 <DialogActions>

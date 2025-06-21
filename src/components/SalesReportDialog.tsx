@@ -80,6 +80,16 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
     const upfrontPaymentsTotal = cashTotal + upiTotal + cardTotal;
     const pendingPaymentsTotal = wardUseTotal + payLaterTotal;
 
+    // Calculate total amount paid vs total amount due
+    const totalAmountPaid = sales.reduce((total, sale) => total + (sale.amountPaid || 0), 0);
+    const totalAmountDue = sales.reduce((total, sale) => {
+        return total + (sale.items?.reduce((itemSum, item) => {
+            const discount = item.discount ?? 0;
+            return itemSum + item.price * item.quantity * (1 - discount / 100);
+        }, 0) || 0);
+    }, 0);
+    const pendingAmount = totalAmountDue - totalAmountPaid;
+
     const formatDateRange = () => {
         if (isSameDay(fromDate, toDate)) {
             return format(fromDate, 'MMMM d, yyyy');
@@ -112,6 +122,24 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                                         <Typography variant="body2" color="textSecondary" >
                                             Pending Payments: ₹{formatIndianCurrency(pendingPaymentsTotal)}
                                             <Tooltip title="Sum of Ward Use and Pay Later payments">
+                                                <InfoOutlinedIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            </Tooltip>
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Paper sx={cardStyles(isDark ? theme.palette.success.dark : '#e8f5e9')}>
+                                <AttachMoneyIcon color="success" fontSize="medium" />
+                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                                    <Typography variant="subtitle1" gutterBottom>
+                                        Actual Paid: ₹{formatIndianCurrency(totalAmountPaid)}
+                                    </Typography>
+                                    <Box>
+                                        <Typography variant="subtitle1" color="error" >
+                                        Round-Off: ₹{formatIndianCurrency(pendingAmount)}
+                                            <Tooltip title="Total Amount minus Amount Paid">
                                                 <InfoOutlinedIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             </Tooltip>
                                         </Typography>

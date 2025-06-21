@@ -14,6 +14,7 @@ export interface sell {
     date: string;
     customer?: string;
     totalAmount: number;
+    amountPaid?: number;
     modeOfPayment?: string;
     items: sellItem[];
     createdBy?: string;
@@ -23,6 +24,7 @@ export interface CreateSellRequest {
     customer?: string;
     modeOfPayment: 'Cash' | 'Card' | 'UPI' | 'Ward Use' | 'Pay Later';
     utrNumber?: string;
+    amountPaid?: number;
     items: {
         medicineId: number;
         quantity: number;

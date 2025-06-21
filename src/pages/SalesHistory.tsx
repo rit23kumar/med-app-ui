@@ -269,6 +269,7 @@ const SalesHistory: React.FC = () => {
                 <TableCell>Date</TableCell>
                 <TableCell>Customer</TableCell>
                 <TableCell>Total Amount</TableCell>
+                <TableCell>Amount Paid</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontWeight: 500 }}>Mode</span>
@@ -319,13 +320,13 @@ const SalesHistory: React.FC = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={8} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : filteredSales.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={8} align="center">
                     No sales records found
                   </TableCell>
                 </TableRow>
@@ -338,6 +339,9 @@ const SalesHistory: React.FC = () => {
                     <TableCell>{sale.customer || "N/A"}</TableCell>
                     <TableCell>
                       ₹{formatIndianCurrency(sale.totalAmount)}
+                    </TableCell>
+                    <TableCell>
+                      {sale.amountPaid ? `₹${formatIndianCurrency(sale.amountPaid)}` : 'Not specified'}
                     </TableCell>
                     <TableCell>{sale.modeOfPayment || "N/A"}</TableCell>
                     <TableCell>{sale.createdBy || "N/A"}</TableCell>
