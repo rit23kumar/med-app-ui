@@ -30,17 +30,17 @@ import {
 import { Medicine } from '../types/medicine';
 import { medicineApi } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import debounce from 'lodash/debounce';
 import { FirstPage as FirstPageIcon, KeyboardArrowLeft, KeyboardArrowRight, LastPage as LastPageIcon } from '@mui/icons-material';
 import MedicineDetailsDialog from './MedicineDetailsDialog';
 import ExpiringMedicinesDialog from './ExpiringMedicinesDialog';
 import { StockHistory } from '../types/medicine';
 import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
+import Checkbox from '@mui/material/Checkbox';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PaginationActionsProps {
     count: number;
@@ -190,6 +190,7 @@ export const MedicineList: React.FC = () => {
     const [expiringDialogOpen, setExpiringDialogOpen] = useState(false);
     const [expiringMedicines, setExpiringMedicines] = useState<StockHistory[]>([]);
     const [loadingExpiring, setLoadingExpiring] = useState(false);
+    const { isAdmin } = useAuth();
 
     const fetchMedicines = async (search?: string) => {
         try {
@@ -264,6 +265,15 @@ export const MedicineList: React.FC = () => {
             setExpiringMedicines([]);
         } finally {
             setLoadingExpiring(false);
+        }
+    };
+
+    const handleToggleEnabled = async (medicine: Medicine) => {
+        try {
+            await medicineApi.updateMedicineEnabled(medicine.id!, !medicine.enabled);
+            setMedicines(meds => meds.map(m => m.id === medicine.id ? { ...m, enabled: !m.enabled } : m));
+        } catch (err) {
+            setError('Failed to update enabled state');
         }
     };
 
@@ -475,6 +485,7 @@ export const MedicineList: React.FC = () => {
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>ID</TableCell>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>Name</TableCell>
+                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Enabled</TableCell>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
@@ -482,6 +493,7 @@ export const MedicineList: React.FC = () => {
                             {loading ? (
                                 Array.from(new Array(5)).map((_, index) => (
                                     <TableRow key={index}>
+                                        <TableCell><Skeleton animation="wave" height={35} /></TableCell>
                                         <TableCell><Skeleton animation="wave" height={35} /></TableCell>
                                         <TableCell><Skeleton animation="wave" height={35} /></TableCell>
                                         <TableCell><Skeleton animation="wave" height={35} /></TableCell>
@@ -522,6 +534,15 @@ export const MedicineList: React.FC = () => {
                                             />
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={!!medicine.enabled}
+                                                disabled={!isAdmin}
+                                                onChange={() => isAdmin && handleToggleEnabled(medicine)}
+                                                color={medicine.enabled ? 'primary' : 'default'}
+                                                inputProps={{ 'aria-label': 'Enable/Disable medicine' }}
+                                            />
+                                        </TableCell>
                                         <TableCell>
                                             <IconButton
                                                 size="medium"

@@ -1,6 +1,7 @@
 export interface Medicine {
     id?: number;
     name: string;
+    enabled?: boolean;
     stock?: Stock;
 }
 

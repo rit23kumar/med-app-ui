@@ -70,6 +70,11 @@ export const medicineApi = {
         const response = await apiClient.get('/medicines/stock/expired');
         return response.data;
     },
+
+    updateMedicineEnabled: async (id: number, enabled: boolean): Promise<Medicine> => {
+        const response = await apiClient.put(`/medicines/enabled/${id}`, { enabled });
+        return response.data;
+    },
 };
 
 export const sellApi = {
