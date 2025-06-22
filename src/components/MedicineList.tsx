@@ -41,6 +41,7 @@ import { StockHistory } from '../types/medicine';
 import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
 import Checkbox from '@mui/material/Checkbox';
 import { useAuth } from '../contexts/AuthContext';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 interface PaginationActionsProps {
     count: number;
@@ -292,10 +293,31 @@ export const MedicineList: React.FC = () => {
         }
     };
 
+    const handleDownloadFlatExport = async () => {
+        try {
+            const response = await medicineApi.getFlatExport();
+            const header = ['name', 'enabled', 'exp_date', 'available_qty', 'price'];
+            const csv = [header.join(','), ...response.map(row =>
+                header.map(h => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(',')
+            )].join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'medicines_flat_export.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            setError('Failed to download medicines CSV');
+        }
+    };
+
     return (
         <Box>
-            <Box 
-                sx={{ 
+            <Box
+                sx={{
                     py: 2,
                     px: isMobile ? 2 : 3,
                     borderBottom: 1,
@@ -303,34 +325,56 @@ export const MedicineList: React.FC = () => {
                     backgroundColor: alpha(theme.palette.primary.main, 0.02)
                 }}
             >
-                <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: isMobile ? 'column' : 'row',
-                    gap: isMobile ? 2 : 0,
-                    justifyContent: 'space-between', 
-                    alignItems: isMobile ? 'stretch' : 'center' 
-                }}>
-                    <Typography 
-                        variant={isMobile ? "h6" : "h5"} 
-                        component="h1" 
-                        color="primary" 
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        justifyContent: 'space-between',
+                        alignItems: isMobile ? 'stretch' : 'center',
+                        width: '100%',
+                    }}
+                >
+                    <Typography
+                        variant={isMobile ? "h6" : "h5"}
+                        component="h1"
+                        color="primary"
                         sx={{ fontWeight: 500 }}
                     >
                         Medicine Inventory
                     </Typography>
-                    {isAdmin && grandTotal !== null && (
-                        <Typography variant="subtitle1" color="secondary" sx={{ ml: 3, fontWeight: 500 }}>
-                            Stock Value: ₹{grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                        </Typography>
-                    )}
-                    <Button
-                        variant="outlined"
-                        startIcon={<NotificationImportantIcon />}
-                        onClick={handleShowExpiring}
-                        size={isMobile ? 'small' : 'medium'}
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: isMobile ? 'column' : 'row',
+                            justifyContent: isMobile ? 'stretch' : 'flex-end',
+                            alignItems: isMobile ? 'stretch' : 'center',
+                            gap: 1,
+                        }}
                     >
-                        Show Expiring
-                    </Button>
+                        {isAdmin && grandTotal !== null && (
+                            <Typography variant="subtitle1" color="secondary" sx={{ fontWeight: 500 }}>
+                                Stock Value: ₹{grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                            </Typography>
+                        )}
+                        <Button
+                            variant="outlined"
+                            startIcon={<NotificationImportantIcon />}
+                            onClick={handleShowExpiring}
+                            size={isMobile ? 'small' : 'medium'}
+                        >
+                            Show Expiring
+                        </Button>
+                        {isAdmin && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<FileDownloadIcon />}
+                                onClick={handleDownloadFlatExport}
+                                size={isMobile ? 'small' : 'medium'}
+                            >
+                                Download All
+                            </Button>
+                        )}
+                    </Box>
                 </Box>
             </Box>
             

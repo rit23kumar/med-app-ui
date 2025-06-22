@@ -80,6 +80,11 @@ export const medicineApi = {
         const response = await apiClient.get('/medicines/stock/grand-total');
         return response.data;
     },
+
+    getFlatExport: async (): Promise<any[]> => {
+        const response = await apiClient.get('/medicines/flat-export');
+        return response.data;
+    },
 };
 
 export const sellApi = {
