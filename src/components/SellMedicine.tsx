@@ -366,6 +366,10 @@ export const SellMedicine: React.FC = () => {
         const printContents = receiptRef.current.innerHTML;
         const printWindow = window.open('', '', 'width=595,height=842'); // A5 size in px
         if (printWindow) {
+            const total = calculateTotal();
+            const paid = isNaN(parseFloat(amountPaid)) ? total : parseFloat(amountPaid);
+            // const pending = total - paid;
+
             printWindow.document.write(`
                 <html>
                     <head>
@@ -531,7 +535,10 @@ export const SellMedicine: React.FC = () => {
                                 </tbody>
                                 <tfoot>
                                     <tr class="total-row">
-                                        <td colspan="6">Total: ₹${formatIndianCurrency(calculateTotal())}</td>
+                                        <td colspan="6">Total: ₹${formatIndianCurrency(total)}</td>
+                                    </tr>
+                                    <tr class="total-row">
+                                        <td colspan="6">Amount Paid: ₹${formatIndianCurrency(paid)}</td>
                                     </tr>
                                 </tfoot>
                             </table>

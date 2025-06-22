@@ -68,7 +68,7 @@ const ExpiringMedicineItem: React.FC<{ item: StockHistory }> = ({ item }) => {
                         Available: <b>{item.availableQuantity}</b> / {item.quantity}
                     </Typography>
                     <Typography variant="body2">
-                        Price: <b>{formatIndianCurrency(item.price)}</b>
+                        Unit Price: <b>{formatIndianCurrency(item.price)}</b>
                     </Typography>
                 </Grid>
                 <Grid item xs={6} sm={4} sx={{ textAlign: 'right' }}>
