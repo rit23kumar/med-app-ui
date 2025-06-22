@@ -75,6 +75,11 @@ export const medicineApi = {
         const response = await apiClient.put(`/medicines/enabled/${id}`, { enabled });
         return response.data;
     },
+
+    getGrandTotalStockValue: async (): Promise<number> => {
+        const response = await apiClient.get('/medicines/stock/grand-total');
+        return response.data;
+    },
 };
 
 export const sellApi = {

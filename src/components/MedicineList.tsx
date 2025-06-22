@@ -191,6 +191,21 @@ export const MedicineList: React.FC = () => {
     const [expiringMedicines, setExpiringMedicines] = useState<StockHistory[]>([]);
     const [loadingExpiring, setLoadingExpiring] = useState(false);
     const { isAdmin } = useAuth();
+    const [grandTotal, setGrandTotal] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!isAdmin) return;
+        // Fetch grand total cost
+        const fetchGrandTotal = async () => {
+            try {
+                const response = await medicineApi.getGrandTotalStockValue();
+                setGrandTotal(response);
+            } catch (err) {
+                setGrandTotal(null);
+            }
+        };
+        fetchGrandTotal();
+    }, [isAdmin]);
 
     const fetchMedicines = async (search?: string) => {
         try {
@@ -303,6 +318,11 @@ export const MedicineList: React.FC = () => {
                     >
                         Medicine Inventory
                     </Typography>
+                    {isAdmin && grandTotal !== null && (
+                        <Typography variant="subtitle1" color="secondary" sx={{ ml: 3, fontWeight: 500 }}>
+                            Stock Value: ₹{grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        </Typography>
+                    )}
                     <Button
                         variant="outlined"
                         startIcon={<NotificationImportantIcon />}
