@@ -35,12 +35,16 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { format } from "date-fns";
-import { getSalesHistory, deleteSell } from "../services/historyService";
+import { getSalesHistory, deleteSell, getSellById } from "../services/historyService";
 import { sell, sellItem } from "../types/sell";
 import SalesReportDialog from "../components/SalesReportDialog";
 import { formatIndianCurrency } from "../utils/formatCurrency";
 import FilterListIcon from '@mui/icons-material/FilterList';
 import DeleteIcon from "@mui/icons-material/Delete";
+import PrintIcon from '@mui/icons-material/Print';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import Tooltip from '@mui/material/Tooltip';
 
 const ALL_MODES = ["Cash", "UPI", "Card", "Ward Use", "Pay Later"];
 
@@ -64,6 +68,12 @@ const SalesHistory: React.FC = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+
+  const [itemDialogOpen, setItemDialogOpen] = useState(false);
+  const [selectedSaleItems, setSelectedSaleItems] = useState<sellItem[]>([]);
+  const [selectedSale, setSelectedSale] = useState<sell | null>(null);
+
+  const [deleteEnabled, setDeleteEnabled] = useState(false);
 
   const handleSearch = async () => {
     let searchFromDate = fromDate;
@@ -155,6 +165,133 @@ const SalesHistory: React.FC = () => {
     }
   };
 
+  const handlePrintInvoice = async (saleId: number) => {
+    try {
+      const sale = await getSellById(saleId);
+      printInvoice(sale);
+    } catch (err) {
+      alert('Failed to fetch sale for printing.');
+    }
+  };
+
+  const printInvoice = (sale: sell) => {
+    const printWindow = window.open('', '', 'width=595,height=842');
+    if (printWindow) {
+      const total = sale.items.reduce((sum, item) => sum + (item.price * item.quantity * (1 - (item.discount ?? 0) / 100)), 0);
+      const paid = sale.amountPaid ?? total;
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Receipt</title>
+            <style>
+              @media print {
+                @page { size: A5 portrait; margin: 4mm; marks: none; }
+                html, body { margin: 0 !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: Arial, sans-serif; font-size: 7pt; color: #000; }
+                .container { padding: 3mm; }
+                .header-section { margin-bottom: 2px; }
+                .header-section h1 { font-size: 12pt; margin: 0; padding: 0; }
+                .header-section p { font-size: 6pt; margin: 0; padding: 0; }
+                .invoice-label { text-align: center; font-size: 12pt; margin-top: 4px; font-weight: bold; }
+                .details-grid { display: flex; border: 1px solid #CCC; margin-bottom: 12px; font-size: 8pt; }
+                .details-grid > div { padding: 6px; flex: 1; }
+                .bill-to { flex: 0.6; }
+                .invoice-info { flex: 0.4; }
+                .invoice-info p, .bill-to p { margin: 2px 0; }
+                .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+                .invoice-table thead th { border-bottom: 1px solid #000; padding: 4px; text-align: left; font-weight: bold; font-size: 8pt; }
+                .invoice-table tbody td { padding: 4px 4px; font-size: 8pt; }
+                .invoice-table td { font-family: 'Courier New', monospace; }
+                .invoice-table td:nth-child(2) { width: 45%; }
+                .invoice-table td:nth-child(1), .invoice-table td:nth-child(3), .invoice-table td:nth-child(4), .invoice-table td:nth-child(5), .invoice-table td:nth-child(6) { white-space: nowrap; }
+                .invoice-table tfoot tr td { padding: 6px 4px; font-weight: bold; font-size: 9pt; }
+                .discount-row { text-align: right; border-top: 1px solid #000; }
+                .total-row { text-align: right; border-top: 1px solid #000; }
+                .spacer { height: 100px; }
+                .numeric-view { font-family: 'Courier New', monospace; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header-section">
+                <h1>Dev Medical Hall<h1>
+                <p>Gola Road, Mahua, Vaishali - 844122</p>
+                <p class="invoice-label">TAX INVOICE</p>
+              </div>
+              <div class="details-grid">
+                <div class="bill-to">
+                  <p><strong>Name:</strong> ${sale.customer || 'N/A'}</p>
+                  <p><strong>Payment Mode:</strong> ${sale.modeOfPayment || 'N/A'}</p>
+                </div>
+                <div class="invoice-info">
+                  <p><strong>Invoice No:</strong> IN${sale.id || 'XX'}</p>
+                  <p><strong>Date:</strong> ${format(new Date(sale.date), 'dd MMMM yyyy HH:mm')}</p>
+                </div>
+              </div>
+              <table class="invoice-table">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Item(s)</th>
+                    <th>Qty</th>
+                    <th>Price(₹)</th>
+                    <th>Tax</th>
+                    <th>Amount(₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sale.items.map((item, idx) => {
+                    const discountAmount = item.price * item.quantity * ((item.discount ?? 0) / 100);
+                    const itemTotal = (item.price * item.quantity) - discountAmount;
+                    return `
+                      <tr>
+                        <td>${idx + 1}</td>
+                        <td>${item.medicine.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${formatIndianCurrency(item.price)}</td>
+                        <td>0</td>
+                        <td>${formatIndianCurrency(itemTotal)}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                  ${sale.items.some(item => (item.discount || 0) > 0) ? `
+                    <tr class="discount-row">
+                      <td class="numeric-view" colspan="6">Discount: ₹${formatIndianCurrency(sale.items.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount ?? 0) / 100)), 0))}</td>
+                    </tr>
+                  ` : ''}
+                </tbody>
+                <tfoot>
+                  <tr class="total-row">
+                    <td colspan="6">Total: ₹${formatIndianCurrency(total)}</td>
+                  </tr>
+                  <tr class="total-row">
+                    <td colspan="6">Amount Paid: ₹${formatIndianCurrency(paid)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  };
+
+  const handleViewItems = (sale: sell) => {
+    setSelectedSaleItems(sale.items);
+    setSelectedSale(sale);
+    setItemDialogOpen(true);
+  };
+
+  const handleCloseItemDialog = () => {
+    setItemDialogOpen(false);
+    setSelectedSaleItems([]);
+    setSelectedSale(null);
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -163,7 +300,7 @@ const SalesHistory: React.FC = () => {
         </Typography>
 
         <Paper sx={{ pl: 2, pb: 2, pt: 1, mb: 2, pr: 2 }}>
-          <Box sx={{ mb: 1, display: "flex", justifyContent: "flex-start" }}>
+          <Box sx={{ mb: 1, display: "flex", justifyContent: "flex-start", alignItems: 'center', gap: 2 }}>
             <FormControlLabel
               control={
                 <Switch
@@ -174,9 +311,18 @@ const SalesHistory: React.FC = () => {
                   size="small"
                 />
               }
-              label={
-                <span style={{ fontSize: 14 }}>Enable Date Range Mode</span>
+              label={<span style={{ fontSize: 14 }}>Enable Date Range Mode</span>}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={deleteEnabled}
+                  onChange={e => setDeleteEnabled(e.target.checked)}
+                  color="error"
+                  size="small"
+                />
               }
+              label={<span style={{ fontSize: 14 }}>Enable Delete</span>}
             />
           </Box>
           <Grid container spacing={2} alignItems="center">
@@ -313,20 +459,19 @@ const SalesHistory: React.FC = () => {
                   </Box>
                 </TableCell>
                 <TableCell>Created By</TableCell>
-                <TableCell>Items</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
+                  <TableCell colSpan={7} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : filteredSales.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
+                  <TableCell colSpan={7} align="center">
                     No sales records found
                   </TableCell>
                 </TableRow>
@@ -346,44 +491,28 @@ const SalesHistory: React.FC = () => {
                     <TableCell>{sale.modeOfPayment || "N/A"}</TableCell>
                     <TableCell>{sale.createdBy || "N/A"}</TableCell>
                     <TableCell>
-                      {(sale.items as sellItem[]).map((item: sellItem) => (
-                        <div
-                          key={item.id}
-                          style={{
-                            fontFamily: `'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif`,
-                            fontSize: "15px",
-                            padding: "6px 0",
-                            color: "inherit",
-                          }}
-                        >
-                          <span style={{ fontWeight: "600", color: "#e67e22" }}>
-                            {item.medicine.name}
-                          </span>{" "}
-                          —{" "}
-                          <span style={{ color: "#3498db" }}>
-                            {item.quantity} × ₹
-                            {formatIndianCurrency(item.price)}
-                          </span>{" "}
-                          →{" "}
-                          <span style={{ fontWeight: "500", color: "#2ecc71" }}>
-                            ₹
-                            {formatIndianCurrency(
-                              item.quantity *
-                                item.price *
-                                (1 - (item.discount ?? 0) / 100)
-                            )}
-                          </span>{" "}
-                          {item.discount ? (
-                            <span style={{ color: "#e74c3c" }}>
-                              (Disc. {item.discount}%)
-                            </span>
-                          ) : null}
-                        </div>
-                      ))}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton onClick={() => handleDeleteClick(sale)} color="error" size="small">
-                        <DeleteIcon fontSize="small" />
+                      <IconButton
+                        onClick={() => handleViewItems(sale)}
+                        color="info"
+                        size="small"
+                        title="View Items"
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                      <Tooltip title={!deleteEnabled ? 'Enable delete using the checkbox above.' : ''} arrow disableHoverListener={deleteEnabled}>
+                        <span>
+                          <IconButton
+                            onClick={() => handleDeleteClick(sale)}
+                            color="error"
+                            size="small"
+                            disabled={!deleteEnabled}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <IconButton onClick={() => handlePrintInvoice(sale.id)} color="primary" size="small" title="Print Invoice">
+                        <PrintIcon fontSize="small" />
                       </IconButton>
                     </TableCell>
                   </TableRow>
@@ -402,7 +531,10 @@ const SalesHistory: React.FC = () => {
         />
 
         <Dialog open={deleteConfirmOpen} onClose={handleCloseDeleteConfirm}>
-          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningAmberIcon color="warning" />
+            Confirm Delete
+          </DialogTitle>
           <DialogContent>
             <DialogContentText>
               Are you sure you want to delete this sale record (Invoice No: IN{saleToDelete?.id})? 
@@ -417,6 +549,60 @@ const SalesHistory: React.FC = () => {
             <Button onClick={handleConfirmDelete} color="error" disabled={deleteLoading}>
               {deleteLoading ? <CircularProgress size={24} /> : 'Delete'}
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Items Dialog */}
+        <Dialog open={itemDialogOpen} onClose={handleCloseItemDialog} maxWidth="sm" fullWidth>
+          <DialogTitle>Sale Items {selectedSale ? `(Invoice No: IN${selectedSale.id})` : ''}</DialogTitle>
+          <DialogContent>
+            {selectedSaleItems.length === 0 ? (
+              <Typography>No items found for this sale.</Typography>
+            ) : (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>No</TableCell>
+                    <TableCell>Item</TableCell>
+                    <TableCell>Qty</TableCell>
+                    <TableCell>Price (₹)</TableCell>
+                    <TableCell>Discount (%)</TableCell>
+                    <TableCell>Amount (₹)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {selectedSaleItems.map((item, idx) => {
+                    const discountAmount = item.price * item.quantity * ((item.discount ?? 0) / 100);
+                    const itemTotal = (item.price * item.quantity) - discountAmount;
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell>
+                          <span style={{ fontWeight: 600, color: '#e67e22' }}>{item.medicine.name}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span style={{ color: '#3498db' }}>{item.quantity}</span>
+                        </TableCell>
+                        <TableCell>{formatIndianCurrency(item.price)}</TableCell>
+                        <TableCell>
+                          {item.discount ? (
+                            <span style={{ color: '#e74c3c' }}>{item.discount}</span>
+                          ) : (
+                            <span>{item.discount ?? 0}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span style={{ fontWeight: 500, color: '#2ecc71' }}>{formatIndianCurrency(itemTotal)}</span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseItemDialog}>Close</Button>
           </DialogActions>
         </Dialog>
       </Container>

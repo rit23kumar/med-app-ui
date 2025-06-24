@@ -14,4 +14,9 @@ export const getPurchaseHistory = async (fromDate: string, toDate: string): Prom
 
 export const deleteSell = async (id: number): Promise<void> => {
     await apiClient.delete(`/sells/${id}`);
+};
+
+export const getSellById = async (id: number): Promise<sell> => {
+    const response = await apiClient.get(`/sells/${id}`);
+    return response.data;
 }; 
