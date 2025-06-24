@@ -349,6 +349,7 @@ export const SellMedicine: React.FC = () => {
             setShowSellModal(false);
             setUtrNumber('');
             setAmountPaid('');
+            setModeOfPayment('Cash');
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || 
                 error.response?.data?.error || 

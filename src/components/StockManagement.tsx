@@ -77,6 +77,9 @@ const StockManagement: React.FC = () => {
     data: { purchasedQuantity: "", availableQuantity: "", price: "" },
     error: null,
   });
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewOldValues, setReviewOldValues] = useState<{ purchasedQuantity: string; availableQuantity: string; price: string } | null>(null);
+  const [reviewNewValues, setReviewNewValues] = useState<{ purchasedQuantity: string; availableQuantity: string; price: string } | null>(null);
 
   // Calculate total available quantity
   const totalAvailable = useMemo(() => {
@@ -380,6 +383,26 @@ const StockManagement: React.FC = () => {
         error: error,
       };
     });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editBatch.batch) return;
+    setReviewOldValues({
+      purchasedQuantity: String(editBatch.batch.quantity),
+      availableQuantity: String(editBatch.batch.availableQuantity),
+      price: String(editBatch.batch.price),
+    });
+    setReviewNewValues({ ...editBatch.data });
+    setReviewDialogOpen(true);
+  };
+
+  const handleConfirmReview = async () => {
+    setReviewDialogOpen(false);
+    await handleConfirmEdit();
+  };
+
+  const handleCancelReview = () => {
+    setReviewDialogOpen(false);
   };
 
   const handleConfirmEdit = async () => {
@@ -733,49 +756,73 @@ const StockManagement: React.FC = () => {
         </Dialog>
 
         {/* Edit Batch Dialog */}
-        <Dialog open={editBatch.open} onClose={handleCloseEditDialog}>
-          <DialogTitle>Edit Batch #{editBatch.batch?.id}</DialogTitle>
+        <Dialog open={editBatch.open} onClose={handleCloseEditDialog} maxWidth="xs" fullWidth>
+          <DialogTitle>Edit Batch</DialogTitle>
           <DialogContent>
-            <DialogContentText sx={{mb: 2}}>
-              Modify the details for this stock batch. Expiration Date: {editBatch.batch ? format(new Date(editBatch.batch.expDate), 'dd-MMM-yyyy') : ''}
-            </DialogContentText>
             <TextField
-              autoFocus
               margin="dense"
-              name="purchasedQuantity"
               label="Purchased Quantity"
+              name="purchasedQuantity"
               type="number"
-              fullWidth
-              variant="outlined"
               value={editBatch.data.purchasedQuantity}
               onChange={handleEditFormChange}
+              fullWidth
+              required
+              sx={{ mb: 2 }}
             />
             <TextField
               margin="dense"
-              name="availableQuantity"
               label="Available Quantity"
+              name="availableQuantity"
               type="number"
-              fullWidth
-              variant="outlined"
               value={editBatch.data.availableQuantity}
               onChange={handleEditFormChange}
-              error={!!editBatch.error}
-              helperText={editBatch.error}
+              fullWidth
+              required
+              sx={{ mb: 2 }}
             />
             <TextField
               margin="dense"
+              label="Unit Price"
               name="price"
-              label="Price"
               type="number"
-              fullWidth
-              variant="outlined"
               value={editBatch.data.price}
               onChange={handleEditFormChange}
+              fullWidth
+              required
+              sx={{ mb: 2 }}
             />
+            {editBatch.error && <Alert severity="error">{editBatch.error}</Alert>}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseEditDialog}>Cancel</Button>
-            <Button onClick={handleConfirmEdit} variant="contained" disabled={!!editBatch.error}>Save Changes</Button>
+            <Button onClick={handleSaveEdit} disabled={!!editBatch.error} variant="contained" color="primary">Save</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Review Edit Dialog */}
+        <Dialog open={reviewDialogOpen} onClose={handleCancelReview} maxWidth="xs" fullWidth>
+          <DialogTitle>Review Changes</DialogTitle>
+          <DialogContent>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Old vs New Values</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={4}></Grid>
+              <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#d32f2f' }}>Old</Typography></Grid>
+              <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#388e3c' }}>New</Typography></Grid>
+              <Grid item xs={4}><Typography variant="body2">Purchased Qty</Typography></Grid>
+              <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.purchasedQuantity}</Typography></Grid>
+              <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.purchasedQuantity}</Typography></Grid>
+              <Grid item xs={4}><Typography variant="body2">Available Qty</Typography></Grid>
+              <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.availableQuantity}</Typography></Grid>
+              <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.availableQuantity}</Typography></Grid>
+              <Grid item xs={4}><Typography variant="body2">Unit Price</Typography></Grid>
+              <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.price}</Typography></Grid>
+              <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.price}</Typography></Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelReview}>Cancel</Button>
+            <Button onClick={handleConfirmReview} variant="contained" color="primary">Confirm</Button>
           </DialogActions>
         </Dialog>
       </Box>

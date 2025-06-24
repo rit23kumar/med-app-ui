@@ -322,7 +322,7 @@ const SalesHistory: React.FC = () => {
                   size="small"
                 />
               }
-              label={<span style={{ fontSize: 14 }}>Enable Delete</span>}
+              label={<span style={{ fontSize: 14, color: '#d32f2f', fontWeight: 600 }}>Enable Delete</span>}
             />
           </Box>
           <Grid container spacing={2} alignItems="center">
