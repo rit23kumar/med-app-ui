@@ -807,8 +807,8 @@ const StockManagement: React.FC = () => {
             <Typography variant="subtitle1" sx={{ mb: 1 }}>Old vs New Values</Typography>
             <Grid container spacing={2}>
               <Grid item xs={4}></Grid>
-              <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#d32f2f' }}>Old</Typography></Grid>
-              <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#388e3c' }}>New</Typography></Grid>
+              <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#d32f2f' }}>Old Value</Typography></Grid>
+              <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#388e3c' }}>New Value</Typography></Grid>
               <Grid item xs={4}><Typography variant="body2">Purchased Qty</Typography></Grid>
               <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.purchasedQuantity}</Typography></Grid>
               <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.purchasedQuantity}</Typography></Grid>

@@ -31,6 +31,7 @@ import { Medicine } from '../types/medicine';
 import { medicineApi } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import debounce from 'lodash/debounce';
@@ -193,6 +194,7 @@ export const MedicineList: React.FC = () => {
     const [loadingExpiring, setLoadingExpiring] = useState(false);
     const { isAdmin } = useAuth();
     const [grandTotal, setGrandTotal] = useState<number | null>(null);
+    const [showStockValue, setShowStockValue] = useState(false);
 
     useEffect(() => {
         if (!isAdmin) return;
@@ -352,9 +354,23 @@ export const MedicineList: React.FC = () => {
                         }}
                     >
                         {isAdmin && grandTotal !== null && (
-                            <Typography variant="subtitle1" color="secondary" sx={{ fontWeight: 500 }}>
-                                Stock Value: ₹{grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle1" color="secondary" sx={{ fontWeight: 500 }}>
+                                    Stock Value:
+                                </Typography>
+                                {showStockValue ? (
+                                    <Typography variant="subtitle1" color="secondary" sx={{ fontWeight: 500 }}>
+                                        ₹{grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </Typography>
+                                ) : (
+                                    <Typography variant="subtitle1" color="secondary" sx={{ fontWeight: 500, letterSpacing: 2 }}>
+                                        ****
+                                    </Typography>
+                                )}
+                                <IconButton color="secondary" onClick={() => setShowStockValue(v => !v)} size="small" sx={{ ml: 0.5 }}>
+                                    {showStockValue ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                                </IconButton>
+                            </Box>
                         )}
                         <Button
                             variant="outlined"
