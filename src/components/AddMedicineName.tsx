@@ -34,7 +34,8 @@ export const AddMedicineName: React.FC<AddMedicineNameProps> = ({ onSuccess }) =
 
         try {
             await medicineApi.addMedicine({
-                name: medicineName.trim()
+                name: medicineName.trim(),
+                enabled: true
             });
             setSuccess(true);
             setSuccessMessage(`${medicineName.trim()} added successfully!`);

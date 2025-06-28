@@ -10,7 +10,8 @@ import {
     IconButton,
     Chip,
     Divider,
-    Paper
+    Paper,
+    useMediaQuery,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Medicine } from '../types/medicine';
@@ -22,6 +23,7 @@ export const MedicineDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [medicine, setMedicine] = useState<Medicine | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -58,7 +60,7 @@ export const MedicineDetail: React.FC = () => {
             <Box 
                 sx={{ 
                     py: 2,
-                    px: 3,
+                    px: isMobile ? 2 : 3,
                     borderBottom: 1,
                     borderColor: 'divider',
                     backgroundColor: alpha(theme.palette.primary.main, 0.02)
@@ -81,7 +83,12 @@ export const MedicineDetail: React.FC = () => {
                     >
                         <ArrowBackIcon />
                     </IconButton>
-                    <Typography variant="h5" component="h1" color="primary" sx={{ fontWeight: 500 }}>
+                    <Typography 
+                        variant={isMobile ? "h6" : "h5"} 
+                        component="h1" 
+                        color="primary" 
+                        sx={{ fontWeight: 500 }}
+                    >
                         Medicine Details
                     </Typography>
                 </Box>

@@ -28,6 +28,8 @@ import {
   Alert,
   CircularProgress,
   Modal,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
@@ -43,6 +45,7 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LockIcon from '@mui/icons-material/Lock';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useThemeContext } from '../theme/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { userApi } from '../api/userApi';
@@ -72,6 +75,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [changePasswordLoading, setChangePasswordLoading] = useState(false);
   const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
   const [changePasswordSuccess, setChangePasswordSuccess] = useState<string | null>(null);
+  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   // Handle focus management when dialog opens
   useEffect(() => {
@@ -103,11 +107,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     logout();
     navigate('/login');
     setDrawerOpen(false);
+    setUserMenuAnchorEl(null);
   };
 
   const handleChangePassword = () => {
     setChangePasswordDialogOpen(true);
     setDrawerOpen(false);
+    setUserMenuAnchorEl(null);
+  };
+
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchorEl(null);
   };
 
   const handleCloseChangePasswordDialog = () => {
@@ -229,66 +243,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </ListItem>
           )
         ))}
-        {isAuthenticated && user && (
-          <>
-            <Divider sx={{ my: 1 }} />
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Avatar sx={{ 
-                width: 56, 
-                height: 56, 
-                mx: 'auto', 
-                mb: 1,
-                bgcolor: theme.palette.primary.main,
-                fontSize: '1.5rem'
-              }}>
-                {user.fullName.charAt(0).toUpperCase()}
-              </Avatar>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-                {user.fullName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {user.role}
-              </Typography>
-            </Box>
-            <Divider sx={{ my: 1 }} />
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleChangePassword}>
-                <ListItemIcon sx={{ color: theme.palette.text.secondary }}>
-                  <LockIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Change Password" 
-                  sx={{
-                    '& .MuiTypography-root': {
-                      color: theme.palette.text.primary,
-                      fontWeight: 400
-                    }
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </>
-        )}
-        {isAuthenticated && (
-          <>
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleLogout}>
-                <ListItemIcon sx={{ color: theme.palette.text.secondary }}>
-                  <LogoutIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Logout" 
-                  sx={{
-                    '& .MuiTypography-root': {
-                      color: theme.palette.text.primary,
-                      fontWeight: 400
-                    }
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </>
-        )}
       </List>
     </Box>
   );
@@ -339,29 +293,86 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               Dev Medical Hall
             </Typography>
-            {isAuthenticated && (
-              <Button
-                color="inherit"
-                onClick={handleLogout}
-                sx={{
-                  color: theme.palette.text.primary,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  ml: 2
-                }}
-              >
-                Logout
-              </Button>
+            {isAuthenticated && user && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: theme.palette.text.secondary,
+                    display: { xs: 'none', sm: 'block' }
+                  }}
+                >
+                  {user.fullName}
+                </Typography>
+                <Tooltip title="User Menu">
+                  <IconButton
+                    onClick={handleUserMenuOpen}
+                    sx={{ 
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                      }
+                    }}
+                  >
+                    <Avatar 
+                      sx={{ 
+                        width: 32, 
+                        height: 32,
+                        bgcolor: theme.palette.primary.main,
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      {user.fullName.charAt(0).toUpperCase()}
+                    </Avatar>
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  anchorEl={userMenuAnchorEl}
+                  open={Boolean(userMenuAnchorEl)}
+                  onClose={handleUserMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  PaperProps={{
+                    sx: {
+                      mt: 1,
+                      minWidth: 200,
+                      boxShadow: theme.shadows[3]
+                    }
+                  }}
+                >
+                  <MenuItem onClick={toggleColorMode}>
+                    <ListItemIcon>
+                      {mode === 'light' ? (
+                        <Brightness4Icon fontSize="small" />
+                      ) : (
+                        <Brightness7Icon fontSize="small" />
+                      )}
+                    </ListItemIcon>
+                    {mode === 'light' ? 'Dark Mode' : 'Light Mode'}
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleChangePassword}>
+                    <ListItemIcon>
+                      <LockIcon fontSize="small" />
+                    </ListItemIcon>
+                    Change Password
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleLogout}>
+                    <ListItemIcon>
+                      <LogoutIcon fontSize="small" />
+                    </ListItemIcon>
+                    Logout
+                  </MenuItem>
+                </Menu>
+              </Box>
             )}
-            <Tooltip title={`Toggle ${mode === 'light' ? 'dark' : 'light'} mode`}>
-              <IconButton onClick={toggleColorMode} color="inherit" sx={{ ml: 1 }}>
-                {mode === 'light' ? (
-                  <Brightness4Icon sx={{ color: theme.palette.text.primary }} />
-                ) : (
-                  <Brightness7Icon sx={{ color: theme.palette.text.primary }} />
-                )}
-              </IconButton>
-            </Tooltip>
           </Toolbar>
         </Container>
       </AppBar>

@@ -24,7 +24,8 @@ import {
     Select,
     InputLabel,
     FormControl,
-    AutocompleteRenderInputParams
+    AutocompleteRenderInputParams,
+    useMediaQuery,
 } from '@mui/material';
 import { Medicine, StockHistory } from '../types/medicine';
 import { CreateSellRequest } from '../types/sell';
@@ -64,6 +65,7 @@ interface SelectedBatchQuantity {
 export const SellMedicine: React.FC = () => {
     const navigate = useNavigate();
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [medicines, setMedicines] = useState<Medicine[]>([]);
     const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
     const [sellItems, setsellItems] = useState<sellItem[]>([]);
@@ -578,408 +580,435 @@ export const SellMedicine: React.FC = () => {
     };
 
     return (
-        <Box sx={{ p: 3 }}>
-            <Typography variant="h4" gutterBottom>
-                Sale Medicine
-            </Typography>
+        <Box>
+            <Box
+                sx={{
+                    py: 2,
+                    px: isMobile ? 2 : 3,
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    backgroundColor: alpha(theme.palette.primary.main, 0.02)
+                }}
+            >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        justifyContent: 'space-between',
+                        alignItems: isMobile ? 'stretch' : 'center',
+                        width: '100%',
+                    }}
+                >
+                    <Typography
+                        variant={isMobile ? "h6" : "h5"}
+                        component="h1"
+                        color="primary"
+                        sx={{ fontWeight: 500 }}
+                    >
+                        Sale Medicine
+                    </Typography>
+                </Box>
+            </Box>
 
-            {/* Add Item Section */}
-            <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h5" gutterBottom>
-                    Add Items to Cart
-                </Typography>
-                <Grid container spacing={3}>
-                    <Grid item xs={12}>
-                        <Autocomplete
-                            sx={{ zIndex: 1399 }}
-                            options={medicines}
-                            getOptionLabel={(option: Medicine) => option.name}
-                            value={selectedMedicine}
-                            onChange={(_, newValue: Medicine | null) => setSelectedMedicine(newValue)}
-                            renderInput={(params: AutocompleteRenderInputParams) => (
-                                <TextField
-                                    {...params}
-                                    label="Select Medicine"
-                                    required
-                                    fullWidth
-                                    error={!!formErrors.medicine}
-                                    helperText={formErrors.medicine}
-                                    autoComplete="off"
-                                    inputRef={medicineAutocompleteRef}
-                                />
-                            )}
-                        />
-                    </Grid>
-
-                    {selectedMedicine && availableBatches.length === 0 && (
-                        <Grid item xs={12}>
-                            <Alert severity="warning">No stock available for {selectedMedicine.name}.</Alert>
-                        </Grid>
-                    )}
-
-                    {selectedMedicine && availableBatches.length > 0 && (
-                        <Grid item xs={12}>
-                            <Paper variant="outlined" sx={{ p: 2 }}>
-                                <Typography variant="subtitle1" gutterBottom>
-                                    Available Batches
-                                </Typography>
-                                <TableContainer>
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell padding="checkbox">Select</TableCell>
-                                                <TableCell>Expiry Date</TableCell>
-                                                <TableCell>Available</TableCell>
-                                                <TableCell>Price</TableCell>
-                                                <TableCell>Quantity</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {availableBatches.map((batch) => (
-                                                <TableRow key={batch.id}>
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox
-                                                            checked={!!selectedBatches[batch.id]}
-                                                            onChange={() => handleBatchToggle(batch)}
-                                                            onKeyPress={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    handleBatchToggle(batch);
-                                                                }
-                                                            }}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Typography
-                                                            sx={{
-                                                                color: getExpiryColor(getRemainingDays(batch.expDate))
-                                                            }}
-                                                        >
-                                                            {formatExpiryText(batch.expDate)}
-                                                        </Typography>
-                                                    </TableCell>
-                                                    <TableCell>{batch.availableQuantity}</TableCell>
-                                                    <TableCell>₹{formatIndianCurrency(batch.price)}</TableCell>
-                                                    <TableCell>
-                                                        {selectedBatches[batch.id] && (
-                                                            <TextField
-                                                                type="number"
-                                                                size="small"
-                                                                value={selectedBatches[batch.id].quantity || ''}
-                                                                onChange={(e) => handleQuantityChange(batch.id, parseInt(e.target.value) || 0)}
-                                                                onKeyPress={(e) => {
-                                                                    if (e.key === 'Enter') {
-                                                                        handleAddItem();
-                                                                    }
-                                                                }}
-                                                                error={!!formErrors.quantities?.[batch.id]}
-                                                                helperText={formErrors.quantities?.[batch.id]}
-                                                                inputProps={{ min: 1, max: batch.availableQuantity }}
-                                                                sx={{ width: 100 }}
-                                                                inputRef={el => { quantityRefs.current[batch.id] = el; }}
-                                                            />
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            </Paper>
-                        </Grid>
-                    )}
-
-                    <Grid item xs={12}>
-                        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                            <Button
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                                onClick={handleAddItem}
-                                disabled={!selectedMedicine || Object.keys(selectedBatches).length === 0}
-                            >
-                                Add to Cart
-                            </Button>
-                        </Box>
-                    </Grid>
-                </Grid>
-            </Paper>
-
-            {/* Cart Section */}
-            {sellItems.length > 0 && (
+            <Box sx={{ p: 3 }}>
+                {/* Add Item Section */}
                 <Paper sx={{ p: 3, mb: 3 }}>
                     <Typography variant="h5" gutterBottom>
-                        Cart Items
+                        Add Items to Cart
                     </Typography>
-                    <TableContainer>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Medicine</TableCell>
-                                    <TableCell>Expiry Date</TableCell>
-                                    <TableCell>Quantity</TableCell>
-                                    <TableCell>Price</TableCell>
-                                    <TableCell>Discount (%)</TableCell>
-                                    <TableCell>Total</TableCell>
-                                    <TableCell>Actions</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {sellItems.map((item, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell>{item.medicineName}</TableCell>
-                                        <TableCell>
-                                            <Typography
-                                                sx={{
-                                                    color: getExpiryColor(getRemainingDays(item.expDate))
-                                                }}
-                                            >
-                                                {formatExpiryText(item.expDate)}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>{item.quantity}</TableCell>
-                                        <TableCell>₹{formatIndianCurrency(item.price)}</TableCell>
-                                        <TableCell>
-                                            <TextField
-                                                type="number"
-                                                size="small"
-                                                value={item.discount === '' ? '' : item.discount}
-                                                onChange={e => {
-                                                    const val = e.target.value;
-                                                    if (val === '') {
-                                                        handleDiscountChange(index, '');
-                                                    } else {
-                                                        handleDiscountChange(index, Math.max(0, Math.min(100, Number(val))));
-                                                    }
-                                                }}
-                                                inputProps={{ min: 0, max: 100, style: { width: 60 } }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            ₹{formatIndianCurrency(item.price * item.quantity * (1 - ((item.discount === '' ? 0 : item.discount || 0) / 100)))}
-                                        </TableCell>
-                                        <TableCell>
-                                            <IconButton
-                                                color="error"
-                                                onClick={() => handleRemoveItem(index)}
-                                                size="small"
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                            <Autocomplete
+                                sx={{ zIndex: 1399 }}
+                                options={medicines}
+                                getOptionLabel={(option: Medicine) => option.name}
+                                value={selectedMedicine}
+                                onChange={(_, newValue: Medicine | null) => setSelectedMedicine(newValue)}
+                                renderInput={(params: AutocompleteRenderInputParams) => (
+                                    <TextField
+                                        {...params}
+                                        label="Select Medicine"
+                                        required
+                                        fullWidth
+                                        error={!!formErrors.medicine}
+                                        helperText={formErrors.medicine}
+                                        autoComplete="off"
+                                        inputRef={medicineAutocompleteRef}
+                                    />
+                                )}
+                            />
+                        </Grid>
 
-                    <Box sx={{ mt: 3 }}>
-                        <Grid container spacing={2} alignItems="center">
-                            {/* Left side: Customer and Payment Mode */}
-                            <Grid item xs={12} sm={9} md={9}>
-                                <Grid container spacing={3}>
-                                    <Grid item xs={12} sm={5}>
-                                        <TextField
-                                            label="Customer Name (Optional)"
-                                            value={customer}
-                                            onChange={(e) => setCustomer(e.target.value)}
-                                            size="small"
-                                            fullWidth
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12} sm={3}>
-                                        <FormControl size="small" fullWidth>
-                                            <InputLabel id="mode-of-payment-label">Mode of Payment</InputLabel>
-                                            <Select
-                                                labelId="mode-of-payment-label"
-                                                value={modeOfPayment}
-                                                label="Mode of Payment"
-                                                onChange={e => setModeOfPayment(e.target.value as 'Cash' | 'Card' | 'UPI' | 'Ward Use' | 'Pay Later')}
-                                            >
-                                                <MenuItem value="Cash">Cash</MenuItem>
-                                                <MenuItem value="UPI">UPI</MenuItem>
-                                                <MenuItem value="Ward Use">Ward Use</MenuItem>
-                                                <MenuItem value="Pay Later">Pay Later</MenuItem>
-                                                <MenuItem value="Card" disabled>Card</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Grid>
-                                    {modeOfPayment === 'UPI' && (
-                                        <Grid item xs={12} sm={4}>
+                        {selectedMedicine && availableBatches.length === 0 && (
+                            <Grid item xs={12}>
+                                <Alert severity="warning">No stock available for {selectedMedicine.name}.</Alert>
+                            </Grid>
+                        )}
+
+                        {selectedMedicine && availableBatches.length > 0 && (
+                            <Grid item xs={12}>
+                                <Paper variant="outlined" sx={{ p: 2 }}>
+                                    <Typography variant="subtitle1" gutterBottom>
+                                        Available Batches
+                                    </Typography>
+                                    <TableContainer>
+                                        <Table size="small">
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell padding="checkbox">Select</TableCell>
+                                                    <TableCell>Expiry Date</TableCell>
+                                                    <TableCell>Available</TableCell>
+                                                    <TableCell>Price</TableCell>
+                                                    <TableCell>Quantity</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {availableBatches.map((batch) => (
+                                                    <TableRow key={batch.id}>
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox
+                                                                checked={!!selectedBatches[batch.id]}
+                                                                onChange={() => handleBatchToggle(batch)}
+                                                                onKeyPress={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        handleBatchToggle(batch);
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography
+                                                                sx={{
+                                                                    color: getExpiryColor(getRemainingDays(batch.expDate))
+                                                                }}
+                                                            >
+                                                                {formatExpiryText(batch.expDate)}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell>{batch.availableQuantity}</TableCell>
+                                                        <TableCell>₹{formatIndianCurrency(batch.price)}</TableCell>
+                                                        <TableCell>
+                                                            {selectedBatches[batch.id] && (
+                                                                <TextField
+                                                                    type="number"
+                                                                    size="small"
+                                                                    value={selectedBatches[batch.id].quantity || ''}
+                                                                    onChange={(e) => handleQuantityChange(batch.id, parseInt(e.target.value) || 0)}
+                                                                    onKeyPress={(e) => {
+                                                                        if (e.key === 'Enter') {
+                                                                            handleAddItem();
+                                                                        }
+                                                                    }}
+                                                                    error={!!formErrors.quantities?.[batch.id]}
+                                                                    helperText={formErrors.quantities?.[batch.id]}
+                                                                    inputProps={{ min: 1, max: batch.availableQuantity }}
+                                                                    sx={{ width: 100 }}
+                                                                    inputRef={el => { quantityRefs.current[batch.id] = el; }}
+                                                                />
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </Paper>
+                            </Grid>
+                        )}
+
+                        <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<AddIcon />}
+                                    onClick={handleAddItem}
+                                    disabled={!selectedMedicine || Object.keys(selectedBatches).length === 0}
+                                >
+                                    Add to Cart
+                                </Button>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {/* Cart Section */}
+                {sellItems.length > 0 && (
+                    <Paper sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h5" gutterBottom>
+                            Cart Items
+                        </Typography>
+                        <TableContainer>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Medicine</TableCell>
+                                        <TableCell>Expiry Date</TableCell>
+                                        <TableCell>Quantity</TableCell>
+                                        <TableCell>Price</TableCell>
+                                        <TableCell>Discount (%)</TableCell>
+                                        <TableCell>Total</TableCell>
+                                        <TableCell>Actions</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {sellItems.map((item, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell>{item.medicineName}</TableCell>
+                                            <TableCell>
+                                                <Typography
+                                                    sx={{
+                                                        color: getExpiryColor(getRemainingDays(item.expDate))
+                                                    }}
+                                                >
+                                                    {formatExpiryText(item.expDate)}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>{item.quantity}</TableCell>
+                                            <TableCell>₹{formatIndianCurrency(item.price)}</TableCell>
+                                            <TableCell>
+                                                <TextField
+                                                    type="number"
+                                                    size="small"
+                                                    value={item.discount === '' ? '' : item.discount}
+                                                    onChange={e => {
+                                                        const val = e.target.value;
+                                                        if (val === '') {
+                                                            handleDiscountChange(index, '');
+                                                        } else {
+                                                            handleDiscountChange(index, Math.max(0, Math.min(100, Number(val))));
+                                                        }
+                                                    }}
+                                                    inputProps={{ min: 0, max: 100, style: { width: 60 } }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                ₹{formatIndianCurrency(item.price * item.quantity * (1 - ((item.discount === '' ? 0 : item.discount || 0) / 100)))}
+                                            </TableCell>
+                                            <TableCell>
+                                                <IconButton
+                                                    color="error"
+                                                    onClick={() => handleRemoveItem(index)}
+                                                    size="small"
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+
+                        <Box sx={{ mt: 3 }}>
+                            <Grid container spacing={2} alignItems="center">
+                                {/* Left side: Customer and Payment Mode */}
+                                <Grid item xs={12} sm={9} md={9}>
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} sm={5}>
                                             <TextField
-                                                label="Last 6-digit of UTR (Optional)"
-                                                value={utrNumber}
-                                                onChange={(e) => setUtrNumber(e.target.value)}
-                                                inputProps={{ 
-                                                    maxLength: 12,
-                                                    pattern: '[0-9]*'
-                                                }}
-                                                error={utrNumber.length > 0 && utrNumber.length < 6}
-                                                helperText={utrNumber.length > 0 && utrNumber.length < 6 ? "UTR must be at least 6 digits" : ""}
+                                                label="Customer Name (Optional)"
+                                                value={customer}
+                                                onChange={(e) => setCustomer(e.target.value)}
                                                 size="small"
                                                 fullWidth
                                             />
                                         </Grid>
-                                    )}
+                                        <Grid item xs={12} sm={3}>
+                                            <FormControl size="small" fullWidth>
+                                                <InputLabel id="mode-of-payment-label">Mode of Payment</InputLabel>
+                                                <Select
+                                                    labelId="mode-of-payment-label"
+                                                    value={modeOfPayment}
+                                                    label="Mode of Payment"
+                                                    onChange={e => setModeOfPayment(e.target.value as 'Cash' | 'Card' | 'UPI' | 'Ward Use' | 'Pay Later')}
+                                                >
+                                                    <MenuItem value="Cash">Cash</MenuItem>
+                                                    <MenuItem value="UPI">UPI</MenuItem>
+                                                    <MenuItem value="Ward Use">Ward Use</MenuItem>
+                                                    <MenuItem value="Pay Later">Pay Later</MenuItem>
+                                                    <MenuItem value="Card" disabled>Card</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+                                        {modeOfPayment === 'UPI' && (
+                                            <Grid item xs={12} sm={4}>
+                                                <TextField
+                                                    label="Last 6-digit of UTR (Optional)"
+                                                    value={utrNumber}
+                                                    onChange={(e) => setUtrNumber(e.target.value)}
+                                                    inputProps={{ 
+                                                        maxLength: 12,
+                                                        pattern: '[0-9]*'
+                                                    }}
+                                                    error={utrNumber.length > 0 && utrNumber.length < 6}
+                                                    helperText={utrNumber.length > 0 && utrNumber.length < 6 ? "UTR must be at least 6 digits" : ""}
+                                                    size="small"
+                                                    fullWidth
+                                                />
+                                            </Grid>
+                                        )}
+                                    </Grid>
+                                </Grid>
+
+                                {/* Right side: Total and Complete Sell Button */}
+                                <Grid item xs={12} sm={3} md={3}>
+                                    <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, mt: { xs: 2, sm: 0 } }}>
+                                        <Typography variant="h6" gutterBottom>
+                                            Total: ₹{formatIndianCurrency(calculateTotal())}
+                                        </Typography>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            startIcon={<ShoppingCartIcon />}
+                                            onClick={() => setShowSellModal(true)}
+                                            disabled={isSubmitting}
+                                        >
+                                            {isSubmitting ? <CircularProgress size={24} /> : 'Complete Sell'}
+                                        </Button>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    </Paper>
+                )}
+
+                <Snackbar
+                    open={!!error}
+                    autoHideDuration={30000}
+                    onClose={() => setError(null)}
+                >
+                    <Alert
+                        onClose={() => setError(null)}
+                        severity="error"
+                        sx={{ width: '100%' }}
+                    >
+                        {error}
+                    </Alert>
+                </Snackbar>
+
+                <Snackbar
+                    open={showSuccess}
+                    autoHideDuration={30000}
+                    onClose={() => setShowSuccess(false)}
+                >
+                    <Alert
+                        onClose={() => setShowSuccess(false)}
+                        severity="success"
+                        sx={{ width: '100%' }}
+                    >
+                        Sale completed successfully!
+                    </Alert>
+                </Snackbar>
+
+                <Dialog open={showSellModal} onClose={() => setShowSellModal(false)} maxWidth="md" fullWidth>
+                    <DialogTitle>Sell Review</DialogTitle>
+                    <DialogContent dividers>
+                        <div ref={receiptRef}>
+                            <Grid container spacing={0} sx={{ border: '1px solid #ccc', borderBottom: 0 }}>
+                                <Grid item xs={7} sx={{ borderRight: '1px solid #ccc', p: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>BILL TO</Typography>
+                                    {customer && <Typography variant="body2">{customer}</Typography>}                                
+                                </Grid>
+                                <Grid item xs={5} sx={{ p: 1 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice No:</Typography>
+                                        <Typography variant="body2">XXXX</Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Date:</Typography>
+                                        <Typography variant="body2">{format(new Date(), 'dd MMMM yyyy HH:mm')}</Typography>
+                                    </Box>
                                 </Grid>
                             </Grid>
 
-                            {/* Right side: Total and Complete Sell Button */}
-                            <Grid item xs={12} sm={3} md={3}>
-                                <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, mt: { xs: 2, sm: 0 } }}>
+                            <table className="receipt-table" style={{ width: '100%', borderCollapse: 'collapse', border: `1px solid ${theme.palette.divider}` }}>
+                                <thead>
+                                    <tr style={{ backgroundColor: alpha(theme.palette.primary.light, 0.1) }}>
+                                        <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>No.</th>
+                                        <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left', width: '40%' }}>Items</th>
+                                        <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Quantity</th>
+                                        <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Price / Unit</th>
+                                        <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Tax</th>
+                                        <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sellItems.map((item, idx) => {
+                                        const discountAmount = item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100);
+                                        const itemTotal = (item.price * item.quantity) - discountAmount;
+                                        return (
+                                            <tr key={idx}>
+                                                <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>{idx + 1}</td>
+                                                <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New', width: '40%' }}>{item.medicineName}</td>
+                                                <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>{item.quantity}</td>
+                                                <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹{formatIndianCurrency(item.price)}</td>
+                                                <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹0 (0%)</td>
+                                                <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹{formatIndianCurrency(itemTotal)}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {
+                                        sellItems.some(item => (item.discount || 0) > 0) && (
+                                            <tr style={{ backgroundColor: alpha(theme.palette.warning.light, 0.1) }}>
+                                                <td colSpan={6} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>Discount: 
+                                                <span style={{ padding: '4px' }}>
+                                                    ₹{formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}
+                                                </span></td>
+                                            </tr>
+                                        )
+                                    }
+                                    <tr style={{ backgroundColor: alpha(theme.palette.success.light, 0.1) }}>
+                                        <td colSpan={2} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>Total</td>
+                                        <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>
+                                            {sellItems.reduce((sum, item) => sum + item.quantity, 0)}
+                                        </td>
+                                        <td colSpan={2} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold', textAlign: 'right' }}></td>
+                                        <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>₹{formatIndianCurrency(calculateTotal())}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <Box sx={{ mt: 3, p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 1 }}>
+                            <Grid container spacing={2} alignItems="center">
+                                <Grid item xs={12} sm={6}>
                                     <Typography variant="h6" gutterBottom>
-                                        Total: ₹{formatIndianCurrency(calculateTotal())}
+                                        Total Amount: ₹{formatIndianCurrency(calculateTotal())}
                                     </Typography>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        startIcon={<ShoppingCartIcon />}
-                                        onClick={() => setShowSellModal(true)}
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? <CircularProgress size={24} /> : 'Complete Sell'}
-                                    </Button>
-                                </Box>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <TextField
+                                        label="Amount Paid"
+                                        type="number"
+                                        value={amountPaid}
+                                        onChange={(e) => setAmountPaid(e.target.value)}
+                                        size="small"
+                                        fullWidth
+                                        inputProps={{
+                                            min: 0,
+                                            step: 0.01
+                                        }}
+                                        placeholder={`₹${formatIndianCurrency(calculateTotal())}`}
+                                    />
+                                </Grid>
                             </Grid>
-                        </Grid>
-                    </Box>
-                </Paper>
-            )}
-
-            <Snackbar
-                open={!!error}
-                autoHideDuration={30000}
-                onClose={() => setError(null)}
-            >
-                <Alert
-                    onClose={() => setError(null)}
-                    severity="error"
-                    sx={{ width: '100%' }}
-                >
-                    {error}
-                </Alert>
-            </Snackbar>
-
-            <Snackbar
-                open={showSuccess}
-                autoHideDuration={30000}
-                onClose={() => setShowSuccess(false)}
-            >
-                <Alert
-                    onClose={() => setShowSuccess(false)}
-                    severity="success"
-                    sx={{ width: '100%' }}
-                >
-                    Sale completed successfully!
-                </Alert>
-            </Snackbar>
-
-            <Dialog open={showSellModal} onClose={() => setShowSellModal(false)} maxWidth="md" fullWidth>
-                <DialogTitle>Sell Review</DialogTitle>
-                <DialogContent dividers>
-                    <div ref={receiptRef}>
-                        <Grid container spacing={0} sx={{ border: '1px solid #ccc', borderBottom: 0 }}>
-                            <Grid item xs={7} sx={{ borderRight: '1px solid #ccc', p: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>BILL TO</Typography>
-                                {customer && <Typography variant="body2">{customer}</Typography>}                                
-                            </Grid>
-                            <Grid item xs={5} sx={{ p: 1 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Invoice No:</Typography>
-                                    <Typography variant="body2">XXXX</Typography>
-                                </Box>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Date:</Typography>
-                                    <Typography variant="body2">{format(new Date(), 'dd MMMM yyyy HH:mm')}</Typography>
-                                </Box>
-                            </Grid>
-                        </Grid>
-
-                        <table className="receipt-table" style={{ width: '100%', borderCollapse: 'collapse', border: `1px solid ${theme.palette.divider}` }}>
-                            <thead>
-                                <tr style={{ backgroundColor: alpha(theme.palette.primary.light, 0.1) }}>
-                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>No.</th>
-                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left', width: '40%' }}>Items</th>
-                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Quantity</th>
-                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Price / Unit</th>
-                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Tax</th>
-                                    <th style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', textAlign: 'left' }}>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {sellItems.map((item, idx) => {
-                                    const discountAmount = item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100);
-                                    const itemTotal = (item.price * item.quantity) - discountAmount;
-                                    return (
-                                        <tr key={idx}>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>{idx + 1}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New', width: '40%' }}>{item.medicineName}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>{item.quantity}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹{formatIndianCurrency(item.price)}</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹0 (0%)</td>
-                                            <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontFamily: 'Courier New' }}>₹{formatIndianCurrency(itemTotal)}</td>
-                                        </tr>
-                                    );
-                                })}
-                                {
-                                    sellItems.some(item => (item.discount || 0) > 0) && (
-                                        <tr style={{ backgroundColor: alpha(theme.palette.warning.light, 0.1) }}>
-                                            <td colSpan={6} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px' }}>Discount: 
-                                            <span style={{ padding: '4px' }}>
-                                                ₹{formatIndianCurrency(sellItems.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount === '' ? 0 : item.discount || 0) / 100)), 0))}
-                                            </span></td>
-                                        </tr>
-                                    )
-                                }
-                                <tr style={{ backgroundColor: alpha(theme.palette.success.light, 0.1) }}>
-                                    <td colSpan={2} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>Total</td>
-                                    <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>
-                                        {sellItems.reduce((sum, item) => sum + item.quantity, 0)}
-                                    </td>
-                                    <td colSpan={2} style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold', textAlign: 'right' }}></td>
-                                    <td style={{ border: `1px solid ${theme.palette.divider}`, padding: '4px', fontWeight: 'bold' }}>₹{formatIndianCurrency(calculateTotal())}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <Box sx={{ mt: 3, p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 1 }}>
-                        <Grid container spacing={2} alignItems="center">
-                            <Grid item xs={12} sm={6}>
-                                <Typography variant="h6" gutterBottom>
-                                    Total Amount: ₹{formatIndianCurrency(calculateTotal())}
-                                </Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    label="Amount Paid"
-                                    type="number"
-                                    value={amountPaid}
-                                    onChange={(e) => setAmountPaid(e.target.value)}
-                                    size="small"
-                                    fullWidth
-                                    inputProps={{
-                                        min: 0,
-                                        step: 0.01
-                                    }}
-                                    placeholder={`₹${formatIndianCurrency(calculateTotal())}`}
-                                />
-                            </Grid>
-                        </Grid>
-                    </Box>
-                    
-                    {printError && <Alert severity="error" sx={{ mt: 2 }}>{printError}</Alert>}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => handleSell(true)} color="primary" variant="contained" disabled={isSubmitting || modeOfPayment === 'Ward Use'}>
-                        Complete With Print
-                    </Button>
-                    <Button onClick={() => handleSell(false)} color="success" variant="contained" disabled={isSubmitting}>
-                        {modeOfPayment === 'Ward Use' ? 'Complete Ward Use' : 'Complete (No Print)'}
-                    </Button>
-                    <Button onClick={() => setShowSellModal(false)} color="inherit" variant="outlined" disabled={isSubmitting}>
-                        Cancel
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                        </Box>
+                        
+                        {printError && <Alert severity="error" sx={{ mt: 2 }}>{printError}</Alert>}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => handleSell(true)} color="primary" variant="contained" disabled={isSubmitting || modeOfPayment === 'Ward Use'}>
+                            Complete With Print
+                        </Button>
+                        <Button onClick={() => handleSell(false)} color="success" variant="contained" disabled={isSubmitting}>
+                            {modeOfPayment === 'Ward Use' ? 'Complete Ward Use' : 'Complete (No Print)'}
+                        </Button>
+                        <Button onClick={() => setShowSellModal(false)} color="inherit" variant="outlined" disabled={isSubmitting}>
+                            Cancel
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </Box>
         </Box>
     );
 }; 

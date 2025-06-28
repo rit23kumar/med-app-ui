@@ -20,6 +20,9 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  useTheme,
+  alpha,
+  useMediaQuery,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -47,6 +50,8 @@ interface EditBatchState {
 }
 
 const StockManagement: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
     null
@@ -154,7 +159,7 @@ const StockManagement: React.FC = () => {
       if (selectedMedicine.id) {
         loadStockHistory(selectedMedicine.id);
       }
-      resetForm();
+      resetFormFields();
     } catch (error) {
       console.error("Error updating stock:", error);
       showNotification("Error updating stock", "error");
@@ -163,6 +168,12 @@ const StockManagement: React.FC = () => {
 
   const resetForm = () => {
     setSelectedMedicine(null);
+    setExpDate(null);
+    setQuantity("");
+    setPrice("");
+  };
+
+  const resetFormFields = () => {
     setExpDate(null);
     setQuantity("");
     setPrice("");
@@ -430,401 +441,428 @@ const StockManagement: React.FC = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Manage Stocks
-        </Typography>
-        
-        {/* Add Medicine Stock Section */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            Add Medicine Stock (Purchase)
-          </Typography>
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <Autocomplete
-                  options={medicines}
-                  getOptionLabel={(option) => option.name}
-                  value={selectedMedicine}
-                  onChange={(_, newValue) => setSelectedMedicine(newValue)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Select Medicine"
-                      required
-                      fullWidth
-                      autoComplete="off"
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <DatePicker
-                  label="Expiration Date"
-                  value={expDate}
-                  onChange={(newValue) => setExpDate(newValue)}
-                  format="dd/MM/yy"
-                  slotProps={{
-                    textField: {
-                      required: true,
-                      fullWidth: true,
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Quantity"
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  required
-                  fullWidth
-                  autoComplete="off"
-                  inputProps={{ min: 0 }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Unit Price"
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                  fullWidth
-                  autoComplete="off"
-                  inputProps={{ min: 0, step: "0.01" }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Box
-                  sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
-                >
-                  <Button type="button" variant="outlined" onClick={resetForm}>
-                    Reset
-                  </Button>
-                  <Button type="submit" variant="contained" color="primary">
-                    Update Stock
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
-          </form>
-
-          {selectedMedicine && (
-            <Paper sx={{ p: 3 }}>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                mb={2}
-              >
-                <Typography variant="h6">
-                  Stock History - {selectedMedicine.name} (Total Available:{" "}
-                  {totalAvailable})
-                </Typography>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={includeFinished}
-                      onChange={(e) => setIncludeFinished(e.target.checked)}
-                      color="primary"
-                      size="small"
-                    />
-                  }
-                  label="Include Finished Batches"
-                />
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              <StockHistoryTable
-                stockHistory={stockHistory}
-                loading={loadingHistory}
-                onDeleteBatch={handleDeleteBatch}
-                onEditBatch={handleOpenEditDialog}
-              />
-            </Paper>
-          )}
-        </Paper>
-
-        {/* Quick Add Medicine Section */}
-        <AddMedicineName
-          onSuccess={() => {
-            showNotification("Medicine added successfully", "success");
-            loadMedicines();
+      <Box>
+        <Box
+          sx={{
+            py: 2,
+            px: isMobile ? 2 : 3,
+            borderBottom: 1,
+            borderColor: 'divider',
+            backgroundColor: alpha(theme.palette.primary.main, 0.02)
           }}
-        />
-
-        {/* Bulk Upload Section */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <Typography variant="h6">Bulk Upload</Typography>
-              <Tooltip title="Add New Medicine with/without its Stock or Update existing medicine with its Stock">
-                <InfoIcon color="action" fontSize="small" />
-              </Tooltip>
-            </Box>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Button
-                variant="outlined"
-                startIcon={<UploadFileIcon />}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isSubmitting}
-              >
-                Upload CSV
-              </Button>
-              <input
-                type="file"
-                accept=".csv"
-                hidden
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-              />
-              <Button
-                variant="text"
-                startIcon={<FileDownloadIcon />}
-                onClick={downloadSampleCsv}
-              >
-                Download Template
-              </Button>
-            </Stack>
-            {uploadError && (
-              <Alert
-                severity="error"
-                sx={{ mt: 2 }}
-                onClose={() => setUploadError(null)}
-              >
-                {uploadError}
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-
-        <Snackbar
-          open={notification.open}
-          autoHideDuration={30000}
-          onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         >
-          <Alert
-            onClose={handleCloseNotification}
-            severity={notification.severity}
-            sx={{ width: "100%" }}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-between',
+              alignItems: isMobile ? 'stretch' : 'center',
+              width: '100%',
+            }}
           >
-            {notification.message}
-          </Alert>
-        </Snackbar>
-
-        <Dialog
-          open={bulkResultModal.open}
-          onClose={() => setBulkResultModal({ open: false, results: [] })}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>Bulk Upload Results</DialogTitle>
-          <DialogContent dividers>
-            {bulkResultModal.results.length === 0 ? (
-              <Typography>No results to display.</Typography>
-            ) : (
-              <Box>
-                {bulkResultModal.results.filter((r) => r.success && r.isNew)
-                  .length > 0 && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      New Medicines Added:
-                    </Typography>
-                    <ul>
-                      {bulkResultModal.results
-                        .filter((r) => r.success && r.isNew)
-                        .map((r, idx) => (
-                          <li key={idx}>{r.name}</li>
-                        ))}
-                    </ul>
-                  </Box>
-                )}
-                {bulkResultModal.results.filter((r) => r.success && r.stock)
-                  .length > 0 && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      Stock Updates:
-                    </Typography>
-                    <ul>
-                      {bulkResultModal.results
-                        .filter((r) => r.success && r.stock)
-                        .map((r, idx) => (
-                          <li key={idx}>
-                            <Typography
-                              variant="subtitle1"
-                              color="textSecondary"
-                            >
-                              <b>{r.name}</b> — Quantity: {r.stock.quantity},
-                              Price: ₹{formatIndianCurrency(r.stock.price)},
-                              Expiry: {r.stock.expDate}{" "}
-                              {r.isNew ? <>(new medicine)</> : null}
-                            </Typography>
-                          </li>
-                        ))}
-                    </ul>
-                  </Box>
-                )}
-                {bulkResultModal.results.filter(
-                  (r) => r.success && !r.stock && r.isNew
-                ).length > 0 && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      Medicines Added Without Stock:
-                    </Typography>
-                    <ul>
-                      {bulkResultModal.results
-                        .filter((r) => r.success && !r.stock && r.isNew)
-                        .map((r, idx) => (
-                          <li key={idx}>{r.name}</li>
-                        ))}
-                    </ul>
-                  </Box>
-                )}
-                {bulkResultModal.results.filter(
-                  (r) => r.success && !r.stock && !r.isNew
-                ).length > 0 && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      Existing Medicines (No Stock Update):
-                    </Typography>
-                    <ul>
-                      {bulkResultModal.results
-                        .filter((r) => r.success && !r.stock && !r.isNew)
-                        .map((r, idx) => (
-                          <li key={idx}>{r.name}</li>
-                        ))}
-                    </ul>
-                  </Box>
-                )}
-                {bulkResultModal.results.filter((r) => !r.success).length >
-                  0 && (
-                  <Box mb={2}>
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight={600}
-                      color="error"
-                    >
-                      Failures:
-                    </Typography>
-                    <ul>
-                      {bulkResultModal.results
-                        .filter((r) => !r.success)
-                        .map((r, idx) => (
-                          <li key={idx}>
-                            <b>{r.name || "(blank)"}</b>: {r.reason}
-                          </li>
-                        ))}
-                    </ul>
-                  </Box>
-                )}
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => setBulkResultModal({ open: false, results: [] })}
+            <Typography
+              variant={isMobile ? "h6" : "h5"}
+              component="h1"
               color="primary"
-              variant="contained"
+              sx={{ fontWeight: 500 }}
             >
-              Close
-            </Button>
-          </DialogActions>
-        </Dialog>
+              Stock Management
+            </Typography>
+          </Box>
+        </Box>
 
-        {/* Confirmation Dialog for deleting a batch */}
-        <Dialog
-          open={openConfirmDialog}
-          onClose={() => setOpenConfirmDialog(false)}
-        >
-          <DialogTitle>Confirm Deletion</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete this batch? This action cannot be undone.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenConfirmDialog(false)} color="primary">
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmDelete} color="error" autoFocus>
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <Box sx={{ p: 3 }}>
+          {/* Add Medicine Stock Section */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h5" gutterBottom>
+              Add Medicine Stock (Purchase)
+            </Typography>
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Autocomplete
+                    options={medicines}
+                    getOptionLabel={(option) => option.name}
+                    value={selectedMedicine}
+                    onChange={(_, newValue) => setSelectedMedicine(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Medicine"
+                        required
+                        fullWidth
+                        autoComplete="off"
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <DatePicker
+                    label="Expiration Date"
+                    value={expDate}
+                    onChange={(newValue) => setExpDate(newValue)}
+                    format="dd/MM/yy"
+                    slotProps={{
+                      textField: {
+                        required: true,
+                        fullWidth: true,
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label="Quantity"
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    required
+                    fullWidth
+                    autoComplete="off"
+                    inputProps={{ min: 0 }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label="Unit Price"
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    required
+                    fullWidth
+                    autoComplete="off"
+                    inputProps={{ min: 0, step: "0.01" }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Box
+                    sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
+                  >
+                    <Button type="button" variant="outlined" onClick={resetForm}>
+                      Reset
+                    </Button>
+                    <Button type="submit" variant="contained" color="primary">
+                      Update Stock
+                    </Button>
+                  </Box>
+                </Grid>
+              </Grid>
+            </form>
 
-        {/* Edit Batch Dialog */}
-        <Dialog open={editBatch.open} onClose={handleCloseEditDialog} maxWidth="xs" fullWidth>
-          <DialogTitle>Edit Batch</DialogTitle>
-          <DialogContent>
-            <TextField
-              margin="dense"
-              label="Purchased Quantity"
-              name="purchasedQuantity"
-              type="number"
-              value={editBatch.data.purchasedQuantity}
-              onChange={handleEditFormChange}
-              fullWidth
-              required
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              label="Available Quantity"
-              name="availableQuantity"
-              type="number"
-              value={editBatch.data.availableQuantity}
-              onChange={handleEditFormChange}
-              fullWidth
-              required
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              label="Unit Price"
-              name="price"
-              type="number"
-              value={editBatch.data.price}
-              onChange={handleEditFormChange}
-              fullWidth
-              required
-              sx={{ mb: 2 }}
-            />
-            {editBatch.error && <Alert severity="error">{editBatch.error}</Alert>}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseEditDialog}>Cancel</Button>
-            <Button onClick={handleSaveEdit} disabled={!!editBatch.error} variant="contained" color="primary">Save</Button>
-          </DialogActions>
-        </Dialog>
+            {selectedMedicine && (
+              <Paper sx={{ p: 3 }}>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={2}
+                >
+                  <Typography variant="h6">
+                    Stock History - {selectedMedicine.name} (Total Available:{" "}
+                    {totalAvailable})
+                  </Typography>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={includeFinished}
+                        onChange={(e) => setIncludeFinished(e.target.checked)}
+                        color="primary"
+                        size="small"
+                      />
+                    }
+                    label="Include Finished Batches"
+                  />
+                </Box>
+                <Divider sx={{ mb: 2 }} />
+                <StockHistoryTable
+                  stockHistory={stockHistory}
+                  loading={loadingHistory}
+                  onDeleteBatch={handleDeleteBatch}
+                  onEditBatch={handleOpenEditDialog}
+                />
+              </Paper>
+            )}
+          </Paper>
 
-        {/* Review Edit Dialog */}
-        <Dialog open={reviewDialogOpen} onClose={handleCancelReview} maxWidth="xs" fullWidth>
-          <DialogTitle>Review Changes</DialogTitle>
-          <DialogContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Old vs New Values</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={4}></Grid>
-              <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#d32f2f' }}>Old Value</Typography></Grid>
-              <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#388e3c' }}>New Value</Typography></Grid>
-              <Grid item xs={4}><Typography variant="body2">Purchased Qty</Typography></Grid>
-              <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.purchasedQuantity}</Typography></Grid>
-              <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.purchasedQuantity}</Typography></Grid>
-              <Grid item xs={4}><Typography variant="body2">Available Qty</Typography></Grid>
-              <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.availableQuantity}</Typography></Grid>
-              <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.availableQuantity}</Typography></Grid>
-              <Grid item xs={4}><Typography variant="body2">Unit Price</Typography></Grid>
-              <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.price}</Typography></Grid>
-              <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.price}</Typography></Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCancelReview}>Cancel</Button>
-            <Button onClick={handleConfirmReview} variant="contained" color="primary">Confirm</Button>
-          </DialogActions>
-        </Dialog>
+          {/* Quick Add Medicine Section */}
+          <AddMedicineName
+            onSuccess={() => {
+              showNotification("Medicine added successfully", "success");
+              loadMedicines();
+            }}
+          />
+
+          {/* Bulk Upload Section */}
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <Typography variant="h6">Bulk Upload</Typography>
+                <Tooltip title="Add New Medicine with/without its Stock or Update existing medicine with its Stock">
+                  <InfoIcon color="action" fontSize="small" />
+                </Tooltip>
+              </Box>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Button
+                  variant="outlined"
+                  startIcon={<UploadFileIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSubmitting}
+                >
+                  Upload CSV
+                </Button>
+                <input
+                  type="file"
+                  accept=".csv"
+                  hidden
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                />
+                <Button
+                  variant="text"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={downloadSampleCsv}
+                >
+                  Download Template
+                </Button>
+              </Stack>
+              {uploadError && (
+                <Alert
+                  severity="error"
+                  sx={{ mt: 2 }}
+                  onClose={() => setUploadError(null)}
+                >
+                  {uploadError}
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
+          <Snackbar
+            open={notification.open}
+            autoHideDuration={30000}
+            onClose={handleCloseNotification}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          >
+            <Alert
+              onClose={handleCloseNotification}
+              severity={notification.severity}
+              sx={{ width: "100%" }}
+            >
+              {notification.message}
+            </Alert>
+          </Snackbar>
+
+          <Dialog
+            open={bulkResultModal.open}
+            onClose={() => setBulkResultModal({ open: false, results: [] })}
+            maxWidth="md"
+            fullWidth
+          >
+            <DialogTitle>Bulk Upload Results</DialogTitle>
+            <DialogContent dividers>
+              {bulkResultModal.results.length === 0 ? (
+                <Typography>No results to display.</Typography>
+              ) : (
+                <Box>
+                  {bulkResultModal.results.filter((r) => r.success && r.isNew)
+                    .length > 0 && (
+                    <Box mb={2}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        New Medicines Added:
+                      </Typography>
+                      <ul>
+                        {bulkResultModal.results
+                          .filter((r) => r.success && r.isNew)
+                          .map((r, idx) => (
+                            <li key={idx}>{r.name}</li>
+                          ))}
+                      </ul>
+                    </Box>
+                  )}
+                  {bulkResultModal.results.filter((r) => r.success && r.stock)
+                    .length > 0 && (
+                    <Box mb={2}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        Stock Updates:
+                      </Typography>
+                      <ul>
+                        {bulkResultModal.results
+                          .filter((r) => r.success && r.stock)
+                          .map((r, idx) => (
+                            <li key={idx}>
+                              <Typography
+                                variant="subtitle1"
+                                color="textSecondary"
+                              >
+                                <b>{r.name}</b> — Quantity: {r.stock.quantity},
+                                Price: ₹{formatIndianCurrency(r.stock.price)},
+                                Expiry: {r.stock.expDate}{" "}
+                                {r.isNew ? <>(new medicine)</> : null}
+                              </Typography>
+                            </li>
+                          ))}
+                      </ul>
+                    </Box>
+                  )}
+                  {bulkResultModal.results.filter(
+                    (r) => r.success && !r.stock && r.isNew
+                  ).length > 0 && (
+                    <Box mb={2}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        Medicines Added Without Stock:
+                      </Typography>
+                      <ul>
+                        {bulkResultModal.results
+                          .filter((r) => r.success && !r.stock && r.isNew)
+                          .map((r, idx) => (
+                            <li key={idx}>{r.name}</li>
+                          ))}
+                      </ul>
+                    </Box>
+                  )}
+                  {bulkResultModal.results.filter(
+                    (r) => r.success && !r.stock && !r.isNew
+                  ).length > 0 && (
+                    <Box mb={2}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        Existing Medicines (No Stock Update):
+                      </Typography>
+                      <ul>
+                        {bulkResultModal.results
+                          .filter((r) => r.success && !r.stock && !r.isNew)
+                          .map((r, idx) => (
+                            <li key={idx}>{r.name}</li>
+                          ))}
+                      </ul>
+                    </Box>
+                  )}
+                  {bulkResultModal.results.filter((r) => !r.success).length >
+                    0 && (
+                    <Box mb={2}>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight={600}
+                        color="error"
+                      >
+                        Failures:
+                      </Typography>
+                      <ul>
+                        {bulkResultModal.results
+                          .filter((r) => !r.success)
+                          .map((r, idx) => (
+                            <li key={idx}>
+                              <b>{r.name || "(blank)"}</b>: {r.reason}
+                            </li>
+                          ))}
+                      </ul>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => setBulkResultModal({ open: false, results: [] })}
+                color="primary"
+                variant="contained"
+              >
+                Close
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Confirmation Dialog for deleting a batch */}
+          <Dialog
+            open={openConfirmDialog}
+            onClose={() => setOpenConfirmDialog(false)}
+          >
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Are you sure you want to delete this batch? This action cannot be undone.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpenConfirmDialog(false)} color="primary">
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmDelete} color="error" autoFocus>
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Edit Batch Dialog */}
+          <Dialog open={editBatch.open} onClose={handleCloseEditDialog} maxWidth="xs" fullWidth>
+            <DialogTitle>Edit Batch</DialogTitle>
+            <DialogContent>
+              <TextField
+                margin="dense"
+                label="Purchased Quantity"
+                name="purchasedQuantity"
+                type="number"
+                value={editBatch.data.purchasedQuantity}
+                onChange={handleEditFormChange}
+                fullWidth
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                margin="dense"
+                label="Available Quantity"
+                name="availableQuantity"
+                type="number"
+                value={editBatch.data.availableQuantity}
+                onChange={handleEditFormChange}
+                fullWidth
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                margin="dense"
+                label="Unit Price"
+                name="price"
+                type="number"
+                value={editBatch.data.price}
+                onChange={handleEditFormChange}
+                fullWidth
+                required
+                sx={{ mb: 2 }}
+              />
+              {editBatch.error && <Alert severity="error">{editBatch.error}</Alert>}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseEditDialog}>Cancel</Button>
+              <Button onClick={handleSaveEdit} disabled={!!editBatch.error} variant="contained" color="primary">Save</Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Review Edit Dialog */}
+          <Dialog open={reviewDialogOpen} onClose={handleCancelReview} maxWidth="xs" fullWidth>
+            <DialogTitle>Review Changes</DialogTitle>
+            <DialogContent>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>Old vs New Values</Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={4}></Grid>
+                <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#d32f2f' }}>Old Value</Typography></Grid>
+                <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#388e3c' }}>New Value</Typography></Grid>
+                <Grid item xs={4}><Typography variant="body2">Purchased Qty</Typography></Grid>
+                <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.purchasedQuantity}</Typography></Grid>
+                <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.purchasedQuantity}</Typography></Grid>
+                <Grid item xs={4}><Typography variant="body2">Available Qty</Typography></Grid>
+                <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.availableQuantity}</Typography></Grid>
+                <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.availableQuantity}</Typography></Grid>
+                <Grid item xs={4}><Typography variant="body2">Unit Price</Typography></Grid>
+                <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.price}</Typography></Grid>
+                <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.price}</Typography></Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCancelReview}>Cancel</Button>
+              <Button onClick={handleConfirmReview} variant="contained" color="primary">Confirm</Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
       </Box>
     </LocalizationProvider>
   );

@@ -26,6 +26,9 @@ import {
   Snackbar,
   FormControlLabel,
   DialogContentText,
+  useTheme,
+  alpha,
+  useMediaQuery,
 } from '@mui/material';
 import { userApi, UserRegistrationRequest, UserResponse } from '../api/userApi';
 import { UserResponseDto } from '../types/User';
@@ -35,6 +38,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 const UserManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // State for Create New User form
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
@@ -231,222 +236,253 @@ const UserManagement: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
-        <Typography component="h1" variant="h5" mb={3}>
-          Create New User
-        </Typography>
-        {creationSuccess && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{creationSuccess}</Alert>}
-        {creationError && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{creationError}</Alert>}
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }} autoComplete="off">
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="fullName"
-            label="Full Name"
-            name="fullName"
-            autoComplete="off"
-            autoFocus
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="username"
-            label="Username"
-            name="username"
-            autoComplete="new-username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            inputProps={{ minLength: 3, maxLength: 8 }}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type="password"
-            id="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <FormControl fullWidth margin="normal" required>
-            <InputLabel id="role-label">Role</InputLabel>
-            <Select
-              labelId="role-label"
-              id="role"
-              value={role}
-              label="Role"
-              onChange={(e) => setRole(e.target.value as 'ADMIN' | 'USER')}
-            >
-              <MenuItem value="ADMIN">Admin</MenuItem>
-              <MenuItem value="USER">User</MenuItem>
-            </Select>
-          </FormControl>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Create User'}
-          </Button>
-        </Box>
-      </Paper>
-
-      <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography component="h2" variant="h5" mb={3}>
-          Manage Existing Users
-        </Typography>
-        {manageSuccessMessage && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{manageSuccessMessage}</Alert>}
-        {manageErrorMessage && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{manageErrorMessage}</Alert>}
-        {isFetchingUsers && <CircularProgress sx={{ my: 2 }} />}
-        {fetchUsersError && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{fetchUsersError}</Alert>}
-        {!isFetchingUsers && !fetchUsersError && users.length === 0 && (
-          <Typography color="text.secondary">No users found.</Typography>
-        )}
-        {!isFetchingUsers && users.length > 0 && (
-          <Paper sx={{ p: 2, mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              User Management
-            </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell>Username</TableCell>
-                    <TableCell>Full Name</TableCell>
-                    <TableCell>Roles</TableCell>
-                    <TableCell>Enabled</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.id}</TableCell>
-                      <TableCell>{user.username}</TableCell>
-                      <TableCell>{user.fullName}</TableCell>
-                      <TableCell>{user.role || 'USER'}</TableCell>
-                      <TableCell>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={user.enabled}
-                              onChange={() => handleToggleStatus(user.id, user.enabled)}
-                              name="enabled-switch"
-                              disabled={user.username === currentUser?.username}
-                            />
-                          }
-                          label={user.enabled ? 'Enabled' : 'Disabled'}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleChangePasswordClick(user)}
-                          sx={{ mr: 1 }}
-                          disabled={user.username === currentUser?.username}
-                        >
-                          Change Password
-                        </Button>
-                        <IconButton
-                          onClick={() => handleDeleteClick(user)}
-                          disabled={user.username === currentUser?.username}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        )}
-      </Paper>
-
-      <Dialog 
-        open={passwordDialogOpen} 
-        onClose={handleClosePasswordDialog}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter' && !changePasswordLoading) {
-            e.preventDefault();
-            handleConfirmPasswordChange();
-          }
+    <Box>
+      <Box
+        sx={{
+          py: 2,
+          px: isMobile ? 2 : 3,
+          borderBottom: 1,
+          borderColor: 'divider',
+          backgroundColor: alpha(theme.palette.primary.main, 0.02)
         }}
       >
-        <DialogTitle>Change Password for {selectedUser?.username}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Please enter the new password for the selected user.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="newPassword"
-            label="New Password"
-            type="password"
-            fullWidth
-            variant="standard"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('confirmNewPassword')?.focus();
-              }
-            }}
-          />
-          <TextField
-            margin="dense"
-            id="confirmNewPassword"
-            label="Confirm New Password"
-            type="password"
-            fullWidth
-            variant="standard"
-            value={confirmNewPassword}
-            onChange={(e) => setConfirmNewPassword(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !changePasswordLoading) {
-                e.preventDefault();
-                handleConfirmPasswordChange();
-              }
-            }}
-          />
-          {changePasswordLoading && <CircularProgress size={20} />}
-          {changePasswordLoading && manageErrorMessage && <Alert severity="error" sx={{ mt: 1 }}>{manageErrorMessage}</Alert>}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClosePasswordDialog}>Cancel</Button>
-          <Button onClick={handleConfirmPasswordChange} disabled={changePasswordLoading}>
-            {changePasswordLoading ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: 'space-between',
+            alignItems: isMobile ? 'stretch' : 'center',
+            width: '100%',
+          }}
+        >
+          <Typography
+            variant={isMobile ? "h6" : "h5"}
+            component="h1"
+            color="primary"
+            sx={{ fontWeight: 500 }}
+          >
+            User Management
+          </Typography>
+        </Box>
+      </Box>
 
-      <Dialog open={openDeleteConfirm} onClose={handleCloseDeleteConfirm}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete user "{userToDelete?.username}"? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteConfirm}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" disabled={loading}>Delete</Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
+          <Typography component="h1" variant="h5" mb={3}>
+            Create New User
+          </Typography>
+          {creationSuccess && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{creationSuccess}</Alert>}
+          {creationError && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{creationError}</Alert>}
+          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }} autoComplete="off">
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="fullName"
+              label="Full Name"
+              name="fullName"
+              autoComplete="off"
+              autoFocus
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="username"
+              label="Username"
+              name="username"
+              autoComplete="new-username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              inputProps={{ minLength: 3, maxLength: 8 }}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
+              type="password"
+              id="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel id="role-label">Role</InputLabel>
+              <Select
+                labelId="role-label"
+                id="role"
+                value={role}
+                label="Role"
+                onChange={(e) => setRole(e.target.value as 'ADMIN' | 'USER')}
+              >
+                <MenuItem value="ADMIN">Admin</MenuItem>
+                <MenuItem value="USER">User</MenuItem>
+              </Select>
+            </FormControl>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Create User'}
+            </Button>
+          </Box>
+        </Paper>
+
+        <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Typography component="h2" variant="h5" mb={3}>
+            Manage Existing Users
+          </Typography>
+          {manageSuccessMessage && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{manageSuccessMessage}</Alert>}
+          {manageErrorMessage && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{manageErrorMessage}</Alert>}
+          {isFetchingUsers && <CircularProgress sx={{ my: 2 }} />}
+          {fetchUsersError && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{fetchUsersError}</Alert>}
+          {!isFetchingUsers && !fetchUsersError && users.length === 0 && (
+            <Typography color="text.secondary">No users found.</Typography>
+          )}
+          {!isFetchingUsers && users.length > 0 && (
+            <Paper sx={{ p: 2, mt: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                User Management
+              </Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>ID</TableCell>
+                      <TableCell>Username</TableCell>
+                      <TableCell>Full Name</TableCell>
+                      <TableCell>Roles</TableCell>
+                      <TableCell>Enabled</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.id}</TableCell>
+                        <TableCell>{user.username}</TableCell>
+                        <TableCell>{user.fullName}</TableCell>
+                        <TableCell>{user.role || 'USER'}</TableCell>
+                        <TableCell>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={user.enabled}
+                                onChange={() => handleToggleStatus(user.id, user.enabled)}
+                                name="enabled-switch"
+                                disabled={user.username === currentUser?.username}
+                              />
+                            }
+                            label={user.enabled ? 'Enabled' : 'Disabled'}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleChangePasswordClick(user)}
+                            sx={{ mr: 1 }}
+                            disabled={user.username === currentUser?.username}
+                          >
+                            Change Password
+                          </Button>
+                          <IconButton
+                            onClick={() => handleDeleteClick(user)}
+                            disabled={user.username === currentUser?.username}
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          )}
+        </Paper>
+
+        <Dialog 
+          open={passwordDialogOpen} 
+          onClose={handleClosePasswordDialog}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && !changePasswordLoading) {
+              e.preventDefault();
+              handleConfirmPasswordChange();
+            }
+          }}
+        >
+          <DialogTitle>Change Password for {selectedUser?.username}</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Please enter the new password for the selected user.
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="dense"
+              id="newPassword"
+              label="New Password"
+              type="password"
+              fullWidth
+              variant="standard"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  document.getElementById('confirmNewPassword')?.focus();
+                }
+              }}
+            />
+            <TextField
+              margin="dense"
+              id="confirmNewPassword"
+              label="Confirm New Password"
+              type="password"
+              fullWidth
+              variant="standard"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !changePasswordLoading) {
+                  e.preventDefault();
+                  handleConfirmPasswordChange();
+                }
+              }}
+            />
+            {changePasswordLoading && <CircularProgress size={20} />}
+            {changePasswordLoading && manageErrorMessage && <Alert severity="error" sx={{ mt: 1 }}>{manageErrorMessage}</Alert>}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClosePasswordDialog}>Cancel</Button>
+            <Button onClick={handleConfirmPasswordChange} disabled={changePasswordLoading}>
+              {changePasswordLoading ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={openDeleteConfirm} onClose={handleCloseDeleteConfirm}>
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete user "{userToDelete?.username}"? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteConfirm}>Cancel</Button>
+            <Button onClick={handleConfirmDelete} color="error" disabled={loading}>Delete</Button>
+          </DialogActions>
+        </Dialog>
+      </Container>
+    </Box>
   );
 };
 

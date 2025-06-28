@@ -25,7 +25,15 @@ import {
     ToggleButtonGroup,
     Stack,
     Tooltip,
-    useMediaQuery
+    useMediaQuery,
+    Menu,
+    FormControl,
+    Select,
+    MenuItem,
+    Checkbox,
+    ListItemText,
+    SelectChangeEvent,
+    InputLabel,
 } from '@mui/material';
 import { Medicine } from '../types/medicine';
 import { medicineApi } from '../services/api';
@@ -40,7 +48,6 @@ import MedicineDetailsDialog from './MedicineDetailsDialog';
 import ExpiringMedicinesDialog from './ExpiringMedicinesDialog';
 import { StockHistory } from '../types/medicine';
 import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
-import Checkbox from '@mui/material/Checkbox';
 import { useAuth } from '../contexts/AuthContext';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
@@ -195,6 +202,8 @@ export const MedicineList: React.FC = () => {
     const { isAdmin } = useAuth();
     const [grandTotal, setGrandTotal] = useState<number | null>(null);
     const [showStockValue, setShowStockValue] = useState(false);
+    const [enabledFilter, setEnabledFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
+    const [enabledFilterAnchorEl, setEnabledFilterAnchorEl] = useState<null | HTMLElement>(null);
 
     useEffect(() => {
         if (!isAdmin) return;
@@ -224,27 +233,30 @@ export const MedicineList: React.FC = () => {
                 setTotalElements(response.totalElements);
             }
         } catch (err) {
-            setError('Failed to fetch medicines');
             console.error('Error fetching medicines:', err);
+            setError('Failed to fetch medicines');
+            setMedicines([]);
         } finally {
             setLoading(false);
         }
     };
-
-    const debouncedSearch = debounce((term: string) => {
-        fetchMedicines(term);
-    }, 300);
 
     useEffect(() => {
         fetchMedicines();
     }, [page, rowsPerPage]);
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const value = event.target.value;
-        setSearchTerm(value);
-        setPage(0); // Reset to first page when searching
-        debouncedSearch(value);
+        setSearchTerm(event.target.value);
+        debouncedSearch(event.target.value);
     };
+
+    const debouncedSearch = useCallback(
+        debounce((search: string) => {
+            setPage(0);
+            fetchMedicines(search);
+        }, 500),
+        []
+    );
 
     const handleSearchTypeChange = (
         event: React.MouseEvent<HTMLElement>,
@@ -252,6 +264,7 @@ export const MedicineList: React.FC = () => {
     ) => {
         if (newSearchType !== null) {
             setSearchType(newSearchType);
+            setPage(0);
             if (searchTerm) {
                 fetchMedicines(searchTerm);
             }
@@ -274,13 +287,12 @@ export const MedicineList: React.FC = () => {
 
     const handleShowExpiring = async () => {
         setLoadingExpiring(true);
-        setExpiringDialogOpen(true);
         try {
-            const data = await medicineApi.getExpiringMedicines();
-            setExpiringMedicines(data);
-        } catch (error) {
-            console.error("Error fetching expiring medicines:", error);
-            setExpiringMedicines([]);
+            const response = await medicineApi.getExpiringMedicines();
+            setExpiringMedicines(response);
+            setExpiringDialogOpen(true);
+        } catch (err) {
+            console.error('Error fetching expiring medicines:', err);
         } finally {
             setLoadingExpiring(false);
         }
@@ -289,9 +301,9 @@ export const MedicineList: React.FC = () => {
     const handleToggleEnabled = async (medicine: Medicine) => {
         try {
             await medicineApi.updateMedicineEnabled(medicine.id!, !medicine.enabled);
-            setMedicines(meds => meds.map(m => m.id === medicine.id ? { ...m, enabled: !m.enabled } : m));
+            fetchMedicines();
         } catch (err) {
-            setError('Failed to update enabled state');
+            console.error('Error toggling medicine enabled status:', err);
         }
     };
 
@@ -312,9 +324,32 @@ export const MedicineList: React.FC = () => {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         } catch (err) {
-            setError('Failed to download medicines CSV');
+            console.error('Error downloading export:', err);
         }
     };
+
+    const handleEnabledFilterClick = (event: React.MouseEvent<HTMLElement>) => {
+        setEnabledFilterAnchorEl(event.currentTarget);
+    };
+
+    const handleEnabledFilterClose = () => {
+        setEnabledFilterAnchorEl(null);
+    };
+
+    const handleEnabledFilterChange = (event: SelectChangeEvent<'all' | 'enabled' | 'disabled'>) => {
+        const value = event.target.value as 'all' | 'enabled' | 'disabled';
+        setEnabledFilter(value);
+        setPage(0); // Reset to first page when changing filter
+        handleEnabledFilterClose();
+    };
+
+    // Filter medicines based on enabled status
+    const filteredMedicines = medicines.filter(medicine => {
+        if (enabledFilter === 'all') return true;
+        if (enabledFilter === 'enabled') return medicine.enabled;
+        if (enabledFilter === 'disabled') return !medicine.enabled;
+        return true;
+    });
 
     return (
         <Box>
@@ -344,6 +379,7 @@ export const MedicineList: React.FC = () => {
                     >
                         Medicine Inventory
                     </Typography>
+                    
                     <Box
                         sx={{
                             display: 'flex',
@@ -372,28 +408,30 @@ export const MedicineList: React.FC = () => {
                                 </IconButton>
                             </Box>
                         )}
+                        
                         <Button
                             variant="outlined"
                             startIcon={<NotificationImportantIcon />}
                             onClick={handleShowExpiring}
-                            size={isMobile ? 'small' : 'medium'}
+                            sx={{ whiteSpace: 'nowrap' }}
                         >
-                            Show Expiring
+                            Expiring Soon
                         </Button>
+                        
                         {isAdmin && (
                             <Button
                                 variant="outlined"
                                 startIcon={<FileDownloadIcon />}
                                 onClick={handleDownloadFlatExport}
-                                size={isMobile ? 'small' : 'medium'}
+                                sx={{ whiteSpace: 'nowrap' }}
                             >
-                                Download All
+                                Export
                             </Button>
                         )}
                     </Box>
                 </Box>
             </Box>
-            
+
             <Stack 
                 direction={isMobile ? "column" : "row"} 
                 spacing={2} 
@@ -436,37 +474,24 @@ export const MedicineList: React.FC = () => {
                         }
                     }}
                 />
+                
                 <ToggleButtonGroup
                     value={searchType}
                     exclusive
                     onChange={handleSearchTypeChange}
                     aria-label="search type"
-                    size={isMobile ? "small" : "medium"}
-                    fullWidth={isMobile}
-                >
-                    <ToggleButton 
-                        value="contains" 
-                        aria-label="contains search"
-                        sx={{
-                            px: 2,
-                            whiteSpace: 'nowrap',
-                            flex: isMobile ? 1 : 'initial',
-                            '&.Mui-selected': {
-                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                color: theme.palette.primary.main,
-                                '&:hover': {
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.15),
-                                }
+                    size="small"
+                    sx={{
+                        '& .MuiToggleButton-root': {
+                            borderColor: alpha(theme.palette.text.primary, 0.1),
+                            color: theme.palette.text.secondary,
+                            '&:hover': {
+                                backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                borderColor: alpha(theme.palette.text.primary, 0.2)
                             }
-                        }}
-                    >
-                        <Tooltip title="Search anywhere in name">
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <FilterAltIcon sx={{ mr: 0.5 }} />
-                                Contains
-                            </Box>
-                        </Tooltip>
-                    </ToggleButton>
+                        }
+                    }}
+                >
                     <ToggleButton 
                         value="startsWith" 
                         aria-label="starts with search"
@@ -512,7 +537,7 @@ export const MedicineList: React.FC = () => {
                                 </CardContent>
                             </Card>
                         ))
-                    ) : medicines.length === 0 ? (
+                    ) : filteredMedicines.length === 0 ? (
                         <Card sx={{ mb: 2 }}>
                             <CardContent>
                                 <Typography color="text.secondary" align="center">
@@ -521,7 +546,7 @@ export const MedicineList: React.FC = () => {
                             </CardContent>
                         </Card>
                     ) : (
-                        medicines.map((medicine) => (
+                        filteredMedicines.map((medicine) => (
                             <Card key={medicine.id} sx={{ mb: 2 }}>
                                 <CardContent>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
@@ -565,7 +590,40 @@ export const MedicineList: React.FC = () => {
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>ID</TableCell>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>Name</TableCell>
-                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Enabled</TableCell>
+                                <TableCell sx={{ fontWeight: 600, py: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 500 }}>Enabled</span>
+                                        <IconButton
+                                            size="small"
+                                            onClick={handleEnabledFilterClick}
+                                            sx={{ ml: 0.5, color: enabledFilter !== 'all' ? 'primary.main' : 'inherit' }}
+                                            aria-label="Filter Enabled Status"
+                                        >
+                                            <FilterAltIcon fontSize="small" />
+                                        </IconButton>
+                                        <Menu
+                                            anchorEl={enabledFilterAnchorEl}
+                                            open={Boolean(enabledFilterAnchorEl)}
+                                            onClose={handleEnabledFilterClose}
+                                            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                                        >
+                                            <FormControl sx={{ m: 1, minWidth: 130 }} size="small">
+                                                <InputLabel id="enabled-filter-label">Filter by Status</InputLabel>
+                                                <Select
+                                                    labelId="enabled-filter-label"
+                                                    value={enabledFilter}
+                                                    onChange={handleEnabledFilterChange}
+                                                    label="Filter by Status"
+                                                    size="small"
+                                                >
+                                                    <MenuItem value="all">All</MenuItem>
+                                                    <MenuItem value="enabled">Enabled</MenuItem>
+                                                    <MenuItem value="disabled">Disabled</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        </Menu>
+                                    </Box>
+                                </TableCell>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
@@ -579,7 +637,7 @@ export const MedicineList: React.FC = () => {
                                         <TableCell><Skeleton animation="wave" height={35} /></TableCell>
                                     </TableRow>
                                 ))
-                            ) : medicines.length === 0 ? (
+                            ) : filteredMedicines.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
@@ -588,7 +646,7 @@ export const MedicineList: React.FC = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                medicines.map((medicine) => (
+                                filteredMedicines.map((medicine) => (
                                     <TableRow 
                                         key={medicine.id}
                                         sx={{ 
