@@ -219,12 +219,12 @@ export const MedicineList: React.FC = () => {
         fetchGrandTotal();
     }, [isAdmin]);
 
-    const fetchMedicines = async (search?: string) => {
+    const fetchMedicines = async (search?: string, type?: 'contains' | 'startsWith') => {
         try {
             setLoading(true);
             setError(null);
             if (search) {
-                const data = await medicineApi.searchMedicines(search, searchType);
+                const data = await medicineApi.searchMedicines(search, type || searchType);
                 setMedicines(data);
                 setTotalElements(data.length);
             } else {
@@ -266,7 +266,7 @@ export const MedicineList: React.FC = () => {
             setSearchType(newSearchType);
             setPage(0);
             if (searchTerm) {
-                fetchMedicines(searchTerm);
+                fetchMedicines(searchTerm, newSearchType);
             }
         }
     };
@@ -310,7 +310,7 @@ export const MedicineList: React.FC = () => {
     const handleDownloadFlatExport = async () => {
         try {
             const response = await medicineApi.getFlatExport();
-            const header = ['name', 'enabled', 'exp_date', 'available_qty', 'price'];
+            const header = ['name', 'enabled', 'expDate', 'availableQty', 'price'];
             const csv = [header.join(','), ...response.map(row =>
                 header.map(h => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(',')
             )].join('\r\n');
@@ -512,6 +512,29 @@ export const MedicineList: React.FC = () => {
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <SearchIcon sx={{ mr: 0.5 }} />
                                 Starts With
+                            </Box>
+                        </Tooltip>
+                    </ToggleButton>
+                    <ToggleButton
+                        value="contains"
+                        aria-label="contains search"
+                        sx={{
+                            px: 2,
+                            whiteSpace: 'nowrap',
+                            flex: isMobile ? 1 : 'initial',
+                            '&.Mui-selected': {
+                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                color: theme.palette.primary.main,
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.15),
+                                }
+                            }
+                        }}
+                    >
+                        <Tooltip title="Search anywhere in name">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <SearchIcon sx={{ mr: 0.5 }} />
+                                Contains
                             </Box>
                         </Tooltip>
                     </ToggleButton>
