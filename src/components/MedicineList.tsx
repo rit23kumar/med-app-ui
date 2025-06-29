@@ -285,7 +285,8 @@ export const MedicineList: React.FC = () => {
         setDetailsDialogOpen(true);
     };
 
-    const handleShowExpiring = async () => {
+    const handleShowExpiring = async (event?: React.MouseEvent<HTMLButtonElement>) => {
+        if (event) event.preventDefault();
         setLoadingExpiring(true);
         try {
             const response = await medicineApi.getExpiringMedicines();
@@ -410,6 +411,7 @@ export const MedicineList: React.FC = () => {
                         )}
                         
                         <Button
+                            type="button"
                             variant="outlined"
                             startIcon={<NotificationImportantIcon />}
                             onClick={handleShowExpiring}
