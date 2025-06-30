@@ -9,6 +9,7 @@ import PurchaseHistory from './pages/PurchaseHistory';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserManagement from './pages/UserManagement';
+import AllMedicinesStock from './pages/AllMedicinesStock';
 
 export const AppRoutes: React.FC = () => {
     return (
@@ -18,6 +19,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="/" element={<ProtectedRoute><SellMedicine /></ProtectedRoute>} />
                 <Route path="/medicine-inventory" element={<ProtectedRoute><MedicineList /></ProtectedRoute>} />
                 <Route path="/manage-stock" element={<ProtectedRoute requireAdmin={true}><StockManagement /></ProtectedRoute>} />
+                <Route path="/all-medicines-stock" element={<ProtectedRoute requireAdmin={true}><AllMedicinesStock /></ProtectedRoute>} />
                 <Route path="/sales-history" element={<ProtectedRoute><SalesHistory /></ProtectedRoute>} />
                 <Route path="/purchase-history" element={<ProtectedRoute requireAdmin={true}><PurchaseHistory /></ProtectedRoute>} />
                 <Route path="/user-management" element={<ProtectedRoute requireAdmin={true}><UserManagement /></ProtectedRoute>} />

@@ -46,6 +46,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LockIcon from '@mui/icons-material/Lock';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import MedicationIcon from '@mui/icons-material/Medication';
 import { useThemeContext } from '../theme/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { userApi } from '../api/userApi';
@@ -91,7 +92,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon />, role: 'ADMIN' },
     { text: 'Sale History', path: '/sales-history', icon: <ReceiptIcon />, role: 'USER' },
     { text: 'Purchase History', path: '/purchase-history', icon: <HistoryIcon />, role: 'ADMIN' },
-    { text: 'User Management', path: '/user-management', icon: <PeopleAltIcon />, role: 'ADMIN' }
+    { text: 'User Management', path: '/user-management', icon: <PeopleAltIcon />, role: 'ADMIN' },
+    { text: 'All Meds & Stocks', path: '/all-medicines-stock', icon: <MedicationIcon />, role: 'ADMIN' }
   ];
 
   const handleDrawerToggle = () => {
