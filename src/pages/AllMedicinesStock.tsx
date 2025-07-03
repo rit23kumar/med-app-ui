@@ -87,9 +87,9 @@ const Row: React.FC<RowProps> = ({ medicine }) => {
   return (
     <TableRow>
       {/* Medicine Name and Total Stock */}
-      <TableCell sx={{ verticalAlign: 'middle', minWidth: 180 }}>
-        <Box display="flex" flexDirection="column"  height="100%">
-          <Typography variant="body1" sx={{ fontWeight: 600 }}>
+      <TableCell sx={{ verticalAlign: 'middle', minWidth: 300, maxWidth: 300, width: 300 }}>
+        <Box display="flex" flexDirection="column" height="100%">
+          <Typography variant="h6" sx={{ fontFamily:"Times New Roman", fontWeight: 500, color: '#ed6c02', letterSpacing: '0.5px'  }}>
             {medicine.name}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -98,25 +98,31 @@ const Row: React.FC<RowProps> = ({ medicine }) => {
         </Box>
       </TableCell>
       {/* Batches */}
-      <TableCell sx={{ verticalAlign: 'middle', minWidth: 320, p: 1 }}>
+      <TableCell sx={{ verticalAlign: 'middle', minWidth: 600, maxWidth: 700, width: 700, p: 1 }}>
         {sortedBatches.length > 0 ? (
           sortedBatches.map((batch, idx) => {
             const daysRemaining = differenceInDays(parseISO(batch.expDate), new Date());
+            const totalValue = batch.availableQty * batch.price;
             return (
-              <Box key={idx} display="flex" alignItems="center" gap={3} sx={{ mb: 1 }}>
-                <Box display="flex" alignItems="center" gap={1} minWidth={120}>
-                  <Typography variant="body2">
+              <Box key={idx} display="flex" alignItems="center" gap={8} sx={{ mb: 1 }}>
+                <Box display="flex" alignItems="center" gap={1} minWidth={160} maxWidth={160} width={160} sx={{ whiteSpace: 'nowrap' }}>
+                  <Typography variant="body2" sx={{ minWidth: 80, maxWidth: 80, width: 80, whiteSpace: 'nowrap' }}>
                     {formatExpiryDate(batch.expDate)}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: getDaysColor(daysRemaining) }}>
-                    ({daysRemaining} days)
-                  </Typography>
+                  {typeof daysRemaining === 'number' && !isNaN(daysRemaining) && isFinite(daysRemaining) && (
+                    <Typography variant="body2" sx={{ color: getDaysColor(daysRemaining), minWidth: 60, maxWidth: 60, width: 60, whiteSpace: 'nowrap' }}>
+                      ({daysRemaining} days)
+                    </Typography>
+                  )}
                 </Box>
-                <Typography variant="body2" minWidth={80}>
-                  Qty: <b>{batch.availableQty}</b>
+                <Typography variant="body2" minWidth={70} maxWidth={80} width={80}>
+                  Qty: <b style={{ color: '#ed6c02' }}>{batch.availableQty}</b>
                 </Typography>
-                <Typography variant="body2" minWidth={80}>
-                  Price: <b>{formatIndianCurrency(batch.price)}</b>
+                <Typography variant="body2" minWidth={90} maxWidth={100} width={100}>
+                  Price: <b style={{ color: '#ed6c02' }}>{formatIndianCurrency(batch.price)}</b>
+                </Typography>
+                <Typography variant="body2" minWidth={120} maxWidth={130} width={130}>
+                  Total Value: <b style={{ color: '#ed6c02' }}>{formatIndianCurrency(totalValue)}</b>
                 </Typography>
               </Box>
             );
@@ -141,6 +147,9 @@ const AllMedicinesStock: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showTotalValue, setShowTotalValue] = useState(false);
+  const [expiringDays, setExpiringDays] = useState<string>('');
+  const [maxTotalStock, setMaxTotalStock] = useState<string>('');
+  const [minTotalStock, setMinTotalStock] = useState<string>('');
 
   const groupedData = useMemo(() => {
     const grouped = rawData.reduce((acc, item) => {
@@ -181,8 +190,31 @@ const AllMedicinesStock: React.FC = () => {
       });
     }
 
+    // Filter by expiringDays
+    if (expiringDays && !isNaN(Number(expiringDays))) {
+      const days = Number(expiringDays);
+      filtered = filtered.filter(medicine =>
+        medicine.batches.some(batch => {
+          const daysRemaining = differenceInDays(parseISO(batch.expDate), new Date());
+          return daysRemaining >= 0 && daysRemaining <= days;
+        })
+      );
+    }
+
+    // Filter by maxTotalStock
+    if (maxTotalStock && !isNaN(Number(maxTotalStock))) {
+      const maxStock = Number(maxTotalStock);
+      filtered = filtered.filter(medicine => medicine.totalStock <= maxStock);
+    }
+
+    // Filter by minTotalStock
+    if (minTotalStock && !isNaN(Number(minTotalStock))) {
+      const minStock = Number(minTotalStock);
+      filtered = filtered.filter(medicine => medicine.totalStock >= minStock);
+    }
+
     return filtered;
-  }, [groupedData, searchTerm, statusFilter]);
+  }, [groupedData, searchTerm, statusFilter, expiringDays, maxTotalStock, minTotalStock]);
 
   const totals = useMemo(() => {
     return filteredData.reduce((acc, medicine) => ({
@@ -237,6 +269,43 @@ const AllMedicinesStock: React.FC = () => {
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
         All Medicines & Stock
       </Typography>
+
+      {/* Filter Row */}
+      <Box display="flex" gap={2} alignItems="center" mb={2}>
+        <TextField
+          label="Expiring in ≤ (days)"
+          type="number"
+          size="small"
+          value={expiringDays}
+          onChange={e => setExpiringDays(e.target.value)}
+          InputProps={{
+            endAdornment: <InputAdornment position="end">days</InputAdornment>,
+            inputProps: { min: 0 }
+          }}
+        />
+        <TextField
+          label="Total Stock ≤"
+          type="number"
+          size="small"
+          value={maxTotalStock}
+          onChange={e => setMaxTotalStock(e.target.value)}
+          InputProps={{
+            endAdornment: <InputAdornment position="end">qty</InputAdornment>,
+            inputProps: { min: 0 }
+          }}
+        />
+        <TextField
+          label="Total Stock ≥"
+          type="number"
+          size="small"
+          value={minTotalStock}
+          onChange={e => setMinTotalStock(e.target.value)}
+          InputProps={{
+            endAdornment: <InputAdornment position="end">qty</InputAdornment>,
+            inputProps: { min: 0 }
+          }}
+        />
+      </Box>
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>

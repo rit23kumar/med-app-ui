@@ -551,7 +551,7 @@ export const SellMedicine: React.FC = () => {
                             <div class="details-grid">
                                 <div class="bill-to">
                                     <p><strong>Name:</strong> ${
-                                      customer || "N/A"
+                                      customer || "XXXXX"
                                     }</p>
                                     <p><strong>Payment Mode:</strong> ${modeOfPayment}${
         utrNumber ? ` (${utrNumber})` : ""

@@ -184,35 +184,140 @@ const SalesHistory: React.FC = () => {
     if (printWindow) {
       const total = sale.items.reduce((sum, item) => sum + (item.price * item.quantity * (1 - (item.discount ?? 0) / 100)), 0);
       const paid = sale.amountPaid ?? total;
+      // Dynamic spacer height based on number of items
+      let spacerHeight = 100;
+      const length = sale.items.length;
+
+      if (length > 24) spacerHeight = 0;
+      else if (length > 20) spacerHeight = 20;
+      else if (length > 16) spacerHeight = 60;
+      else if (length > 12) spacerHeight = 100;
+      else if (length > 8) spacerHeight = 140;
+      else if (length > 4) spacerHeight = 180;
+      else spacerHeight = 220;
       printWindow.document.write(`
         <html>
           <head>
             <title>Receipt</title>
             <style>
               @media print {
-                @page { size: A5 portrait; margin: 4mm; marks: none; }
-                html, body { margin: 0 !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: Arial, sans-serif; font-size: 7pt; color: #000; }
-                .container { padding: 3mm; }
-                .header-section { margin-bottom: 2px; }
-                .header-section h1 { font-size: 12pt; margin: 0; padding: 0; }
-                .header-section p { font-size: 6pt; margin: 0; padding: 0; }
-                .invoice-label { text-align: center; font-size: 12pt; margin-top: 4px; font-weight: bold; }
-                .details-grid { display: flex; border: 1px solid #CCC; margin-bottom: 12px; font-size: 8pt; }
-                .details-grid > div { padding: 6px; flex: 1; }
-                .bill-to { flex: 0.6; }
-                .invoice-info { flex: 0.4; }
-                .invoice-info p, .bill-to p { margin: 2px 0; }
-                .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-                .invoice-table thead th { border-bottom: 1px solid #000; padding: 4px; text-align: left; font-weight: bold; font-size: 8pt; }
-                .invoice-table tbody td { padding: 4px 4px; font-size: 8pt; }
-                .invoice-table td { font-family: 'Courier New', monospace; }
-                .invoice-table td:nth-child(2) { width: 45%; }
-                .invoice-table td:nth-child(1), .invoice-table td:nth-child(3), .invoice-table td:nth-child(4), .invoice-table td:nth-child(5), .invoice-table td:nth-child(6) { white-space: nowrap; }
-                .invoice-table tfoot tr td { padding: 6px 4px; font-weight: bold; font-size: 9pt; }
-                .discount-row { text-align: right; border-top: 1px solid #000; }
-                .total-row { text-align: right; border-top: 1px solid #000; }
-                .spacer { height: 100px; }
-                .numeric-view { font-family: 'Courier New', monospace; }
+                @page {
+                  size: A5 portrait;
+                  margin: 4mm;
+                  marks: none;
+                }
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                  font-family: Arial, sans-serif;
+                  font-size: 7pt;
+                  color: #000;
+                }
+                .container {
+                  padding: 3mm;
+                }
+                .header-section {
+                  margin-bottom: 2px;
+                }
+                .header-section h1 {
+                  font-size: 13pt;
+                  margin: 0;
+                  padding: 0;
+                }
+                .header-section p {
+                  font-size: 6pt;
+                  margin: 0;
+                  padding: 0;
+                }
+                .invoice-label {
+                  text-align: center;
+                  font-size: 12pt;
+                  margin-top: 4px;
+                  font-weight: bold;
+                }
+                .details-grid {
+                  display: flex;
+                  border-bottom: 0.5px solid #CCC;
+                  margin-bottom: 12px;
+                  font-size: 8pt;
+                }
+                .details-grid > div {
+                  padding: 6px;
+                  flex: 1;
+                }
+                .bill-to {
+                  flex: 0.6;
+                }
+                .invoice-info {
+                  flex: 0.4;
+                }
+                .invoice-info p, .bill-to p {
+                  margin: 2px 0;
+                }
+                .invoice-table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin-bottom: 10px;
+                }
+                .invoice-table thead th {
+                  border-bottom: 1px solid #000;
+                  padding: 4px;
+                  text-align: left;
+                  font-weight: bold;
+                  font-size: 8pt;
+                }
+                .invoice-table tbody td {
+                  padding: 4px 4px;
+                  font-size: 8pt;
+                }
+                .invoice-table td {
+                  font-family: 'Courier New', monospace;
+                }
+                .invoice-table td:nth-child(2) {
+                  width: 45%;
+                }
+                .invoice-table tbody td:nth-child(1),
+                .invoice-table tbody td:nth-child(2),
+                .invoice-table tbody td:nth-child(3),
+                .invoice-table tbody td:nth-child(4),
+                .invoice-table tbody td:nth-child(5) {
+                  border-right: 1px solid #000;
+                }
+                .invoice-table td:nth-child(1),
+                .invoice-table td:nth-child(3),
+                .invoice-table td:nth-child(4),
+                .invoice-table td:nth-child(5),
+                .invoice-table td:nth-child(6) {
+                  white-space: nowrap;
+                }
+                .invoice-table tfoot tr td {
+                  padding: 6px 4px;
+                  font-weight: bold;
+                  font-size: 9pt;
+                }
+                .discount-row {
+                  text-align: right;
+                  border-top: 1px solid #000;
+                }
+                .total-row {
+                  text-align: right;
+                  border-top: 1px solid #000;
+                }
+                .spacer {
+                  height: 100px;
+                }
+                .numeric-view {
+                  font-family: 'Courier New', monospace;
+                }
+                .thin-line {
+                  height: 0.5px;
+                  background-color: #ccc;
+                  border: none;
+                  margin-top: 4px !important;
+                  margin-bottom: 4px !important;
+                }
               }
             </style>
           </head>
@@ -221,7 +326,9 @@ const SalesHistory: React.FC = () => {
               <div class="header-section">
                 <h1>Dev Medical Hall<h1>
                 <p>Gola Road, Mahua, Vaishali - 844122</p>
+                <p class="thin-line"></p>
                 <p class="invoice-label">TAX INVOICE</p>
+                <p class="thin-line"></p>
               </div>
               <div class="details-grid">
                 <div class="bill-to">
@@ -264,6 +371,13 @@ const SalesHistory: React.FC = () => {
                       <td class="numeric-view" colspan="6">Discount: ₹${formatIndianCurrency(sale.items.reduce((sum, item) => sum + (item.price * item.quantity * ((item.discount ?? 0) / 100)), 0))}</td>
                     </tr>
                   ` : ''}
+                   <tr>
+                      <td><div class="spacer"></div></td>
+                      <td><div class="spacer"></div></td>
+                      <td><div class="spacer"></div></td>
+                      <td><div class="spacer"></div></td>
+                      <td><div class="spacer"></div></td>
+                   </tr>
                 </tbody>
                 <tfoot>
                   <tr class="total-row">
