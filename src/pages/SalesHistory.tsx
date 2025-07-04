@@ -33,6 +33,8 @@ import {
   useTheme,
   alpha,
   useMediaQuery,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -80,6 +82,8 @@ const SalesHistory: React.FC = () => {
 
   const [deleteEnabled, setDeleteEnabled] = useState(false);
 
+  const [dateType, setDateType] = useState<'accountingDate' | 'invoiceDate'>('accountingDate');
+
   const handleSearch = async () => {
     let searchFromDate = fromDate;
     let searchToDate = toDate;
@@ -93,13 +97,13 @@ const SalesHistory: React.FC = () => {
         setError(null);
         const formattedFromDate = format(searchFromDate, "yyyy-MM-dd");
         const formattedToDate = format(searchToDate, "yyyy-MM-dd");
-        const data = await getSalesHistory(formattedFromDate, formattedToDate);
+        const data = await getSalesHistory(formattedFromDate, formattedToDate, dateType);
         const sorted = Array.isArray(data)
           ? data
               .slice()
               .sort(
                 (a, b) =>
-                  new Date(b.date).getTime() - new Date(a.date).getTime()
+                  new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()
               )
           : [];
         setSales(sorted);
@@ -128,6 +132,11 @@ const SalesHistory: React.FC = () => {
   useEffect(() => {
     handleSearch();
   }, []);
+
+  useEffect(() => {
+    handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateType]);
 
   // Filter sales by selected modes
   const filteredSales = sales.filter(sale =>
@@ -337,7 +346,7 @@ const SalesHistory: React.FC = () => {
                 </div>
                 <div class="invoice-info">
                   <p><strong>Invoice No:</strong> IN${sale.id || 'XX'}</p>
-                  <p><strong>Date:</strong> ${format(new Date(sale.date), 'dd MMMM yyyy HH:mm')}</p>
+                  <p><strong>Date:</strong> ${sale.invoiceDate ? format(new Date(sale.invoiceDate), 'dd MMMM yyyy HH:mm') : '-'}</p>
                 </div>
               </div>
               <table class="invoice-table">
@@ -440,6 +449,58 @@ const SalesHistory: React.FC = () => {
             >
               Sales History
             </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Button
+                variant={dateType === 'accountingDate' ? 'contained' : 'outlined'}
+                color="success"
+                onClick={() => {
+                  if (dateType !== 'accountingDate') {
+                    setDateType('accountingDate');
+                    setDatesChanged(true);
+                  }
+                }}
+                size="small"
+                sx={{
+                  fontWeight: 'bold',
+                  minWidth: 140,
+                  ...(dateType === 'accountingDate' && {
+                    pointerEvents: 'none',
+                    opacity: 1,
+                    backgroundColor: theme.palette.success.main + ' !important',
+                    color: theme.palette.success.contrastText + ' !important',
+                    borderColor: theme.palette.success.dark + ' !important',
+                  })
+                }}
+                disabled={dateType === 'accountingDate'}
+              >
+                Accounting Date
+              </Button>
+              <Button
+                variant={dateType === 'invoiceDate' ? 'contained' : 'outlined'}
+                color="primary"
+                onClick={() => {
+                  if (dateType !== 'invoiceDate') {
+                    setDateType('invoiceDate');
+                    setDatesChanged(true);
+                  }
+                }}
+                size="small"
+                sx={{
+                  fontWeight: 'bold',
+                  minWidth: 140,
+                  ...(dateType === 'invoiceDate' && {
+                    pointerEvents: 'none',
+                    opacity: 1,
+                    backgroundColor: theme.palette.primary.main + ' !important',
+                    color: theme.palette.primary.contrastText + ' !important',
+                    borderColor: theme.palette.primary.dark + ' !important',
+                  })
+                }}
+                disabled={dateType === 'invoiceDate'}
+              >
+                Invoice Date
+              </Button>
+            </Box>
           </Box>
         </Box>
 
@@ -557,7 +618,7 @@ const SalesHistory: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Date</TableCell>
+                  <TableCell>{dateType === 'accountingDate' ? 'Accounting Date' : 'Invoice Date'}</TableCell>
                   <TableCell>Customer</TableCell>
                   <TableCell>Total Amount</TableCell>
                   <TableCell>Amount Paid</TableCell>
@@ -624,7 +685,14 @@ const SalesHistory: React.FC = () => {
                   filteredSales.map((sale) => (
                     <TableRow key={sale.id}>
                       <TableCell>
-                        {format(new Date(sale.date), "dd/MM/yy HH:mm")}
+                        <span style={{
+                          color: dateType === 'accountingDate' ? theme.palette.success.main : theme.palette.primary.main,
+                          fontWeight: 600
+                        }}>
+                          {sale[dateType] && !isNaN(new Date(sale[dateType]).getTime())
+                            ? format(new Date(sale[dateType]), "dd/MM/yy HH:mm")
+                            : "-"}
+                        </span>
                       </TableCell>
                       <TableCell>{sale.customer || "N/A"}</TableCell>
                       <TableCell>

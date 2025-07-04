@@ -34,7 +34,7 @@ import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, addDays } from "date-fns";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -91,6 +91,7 @@ export const SellMedicine: React.FC = () => {
   >("Cash");
   const [utrNumber, setUtrNumber] = useState<string>("");
   const [amountPaid, setAmountPaid] = useState<string>("");
+  const [accountingDateOption, setAccountingDateOption] = useState<'today' | 'tomorrow'>('today');
 
   const medicineAutocompleteRef = useRef<HTMLInputElement>(null);
 
@@ -332,6 +333,11 @@ export const SellMedicine: React.FC = () => {
     }, 0);
   };
 
+  const getAccountingDate = () => {
+    const base = new Date();
+    return accountingDateOption === 'today' ? base : addDays(base, 1);
+  };
+
   const handleSell = async (print: boolean) => {
     if (sellItems.length === 0) {
       setError("Please add at least one item to the sell");
@@ -347,11 +353,15 @@ export const SellMedicine: React.FC = () => {
     setError(null);
     setPrintError(null);
     try {
+      const now = new Date();
+      const accountingDate = getAccountingDate();
       const sellRequest: CreateSellRequest = {
         customer: customer || undefined,
         modeOfPayment,
         utrNumber: modeOfPayment === "UPI" ? utrNumber : undefined,
         amountPaid: amountPaid ? parseFloat(amountPaid) : undefined,
+        invoiceDate: now.toISOString(),
+        accountingDateOption: accountingDateOption,
         items: sellItems.map((item) => ({
           medicineId: item.medicineId,
           quantity: item.quantity,
@@ -1078,7 +1088,30 @@ export const SellMedicine: React.FC = () => {
           maxWidth="md"
           fullWidth
         >
-          <DialogTitle>Sell Review</DialogTitle>
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Sell Review</span>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>
+                  Accounting Date:
+                </Typography>
+                <Button
+                  variant={accountingDateOption === 'today' ? 'contained' : 'outlined'}
+                  onClick={() => setAccountingDateOption('today')}
+                  size="small"
+                >
+                  Today ({format(new Date(), 'dd MMM yyyy')})
+                </Button>
+                <Button
+                  variant={accountingDateOption === 'tomorrow' ? 'contained' : 'outlined'}
+                  onClick={() => setAccountingDateOption('tomorrow')}
+                  size="small"
+                >
+                  Tomorrow ({format(addDays(new Date(), 1), 'dd MMM yyyy')})
+                </Button>
+              </Box>
+            </Box>
+          </DialogTitle>
           <DialogContent dividers>
             <div ref={receiptRef}>
               <Grid
@@ -1107,7 +1140,7 @@ export const SellMedicine: React.FC = () => {
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                      Date:
+                    Invoice Date:
                     </Typography>
                     <Typography variant="body2">
                       {format(new Date(), "dd MMMM yyyy HH:mm")}

@@ -11,7 +11,8 @@ export interface sellItem {
 
 export interface sell {
     id: number;
-    date: string;
+    invoiceDate: string;
+    accountingDate: string;
     customer?: string;
     totalAmount: number;
     amountPaid?: number;
@@ -25,6 +26,8 @@ export interface CreateSellRequest {
     modeOfPayment: 'Cash' | 'Card' | 'UPI' | 'Ward Use' | 'Pay Later';
     utrNumber?: string;
     amountPaid?: number;
+    invoiceDate?: string;
+    accountingDateOption: 'today' | 'tomorrow';
     items: {
         medicineId: number;
         quantity: number;

@@ -2,8 +2,8 @@ import apiClient from '../api/axiosConfig';
 import { sell } from '../types/sell';
 import { StockHistory } from '../types/medicine';
 
-export const getSalesHistory = async (fromDate: string, toDate: string): Promise<sell[]> => {
-    const response = await apiClient.post('/history/sales', { fromDate, toDate });
+export const getSalesHistory = async (fromDate: string, toDate: string, dateType: 'accountingDate' | 'invoiceDate' = 'accountingDate'): Promise<sell[]> => {
+    const response = await apiClient.post('/history/sales', { fromDate, toDate, dateType });
     return response.data;
 };
 
