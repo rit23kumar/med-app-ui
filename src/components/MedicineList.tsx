@@ -211,6 +211,7 @@ export const MedicineList: React.FC = () => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [medicineToDelete, setMedicineToDelete] = useState<Medicine | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [snackbarMsg, setSnackbarMsg] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isAdmin) return;
@@ -279,10 +280,15 @@ export const MedicineList: React.FC = () => {
 
     const handleToggleEnabled = async (medicine: Medicine) => {
         try {
-            await medicineApi.updateMedicineEnabled(medicine.id!, !medicine.enabled);
-            fetchMedicines();
+            const updated = await medicineApi.updateMedicineEnabled(medicine.id!, !medicine.enabled);
+            setMedicines(meds =>
+                meds.map(m =>
+                    m.id === medicine.id ? { ...m, enabled: updated.enabled } : m
+                )
+            );
+            setSnackbarMsg(`${medicine.name} is now ${updated.enabled ? 'enabled' : 'disabled'}.`);
         } catch (err) {
-            console.error('Error toggling medicine enabled status:', err);
+            setSnackbarMsg('Failed to update medicine status.');
         }
     };
 
@@ -796,6 +802,17 @@ export const MedicineList: React.FC = () => {
             >
                 <Alert onClose={() => setDeleteError(null)} severity="error" sx={{ width: '100%' }}>
                     {deleteError}
+                </Alert>
+            </Snackbar>
+
+            <Snackbar
+                open={!!snackbarMsg}
+                autoHideDuration={4000}
+                onClose={() => setSnackbarMsg(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setSnackbarMsg(null)} severity="success" sx={{ width: '100%' }}>
+                    {snackbarMsg}
                 </Alert>
             </Snackbar>
         </Box>
