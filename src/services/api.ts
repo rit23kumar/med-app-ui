@@ -10,8 +10,10 @@ export const medicineApi = {
         return response.data;
     },
 
-    getAllMedicines: async (): Promise<Medicine[]> => {
-        const response = await apiClient.get(`/medicines/all`);
+    getAllMedicines: async (includeDisabled?: boolean): Promise<Medicine[]> => {
+        const response = await apiClient.get(`/medicines/all`, {
+            params: includeDisabled ? { includeDisabled: true } : {}
+        });
         return response.data;
     },
 
@@ -84,6 +86,10 @@ export const medicineApi = {
     getFlatExport: async (): Promise<any[]> => {
         const response = await apiClient.get('/medicines/flat-export');
         return response.data;
+    },
+
+    deleteMedicine: async (id: number): Promise<void> => {
+        await apiClient.delete(`/medicines/${id}`);
     },
 };
 

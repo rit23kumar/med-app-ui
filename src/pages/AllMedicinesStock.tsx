@@ -29,6 +29,8 @@ import {
   Button,
   alpha,
   Tooltip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   KeyboardArrowDown as ExpandMoreIcon,
@@ -115,13 +117,13 @@ const Row: React.FC<RowProps> = ({ medicine }) => {
                     </Typography>
                   )}
                 </Box>
-                <Typography variant="body2" minWidth={70} maxWidth={80} width={80}>
+                <Typography variant="body2" minWidth={60} maxWidth={70} width={70}>
                   Qty: <b style={{ color: '#ed6c02' }}>{batch.availableQty}</b>
                 </Typography>
-                <Typography variant="body2" minWidth={90} maxWidth={100} width={100}>
+                <Typography variant="body2" minWidth={80} maxWidth={90} width={90}>
                   Price: <b style={{ color: '#ed6c02' }}>{formatIndianCurrency(batch.price)}</b>
                 </Typography>
-                <Typography variant="body2" minWidth={120} maxWidth={130} width={130}>
+                <Typography variant="body2" minWidth={140} maxWidth={150} width={150}>
                   Total Value: <b style={{ color: '#ed6c02' }}>{formatIndianCurrency(totalValue)}</b>
                 </Typography>
               </Box>
@@ -150,6 +152,7 @@ const AllMedicinesStock: React.FC = () => {
   const [expiringDays, setExpiringDays] = useState<string>('');
   const [maxTotalStock, setMaxTotalStock] = useState<string>('');
   const [minTotalStock, setMinTotalStock] = useState<string>('');
+  const [showDisabled, setShowDisabled] = useState(false);
 
   const groupedData = useMemo(() => {
     const grouped = rawData.reduce((acc, item) => {
@@ -175,6 +178,11 @@ const AllMedicinesStock: React.FC = () => {
 
   const filteredData = useMemo(() => {
     let filtered = groupedData;
+
+    // Only show enabled medicines unless showDisabled is true
+    if (!showDisabled) {
+      filtered = filtered.filter(medicine => medicine.enabled);
+    }
 
     if (searchTerm) {
       filtered = filtered.filter(medicine =>
@@ -214,7 +222,7 @@ const AllMedicinesStock: React.FC = () => {
     }
 
     return filtered;
-  }, [groupedData, searchTerm, statusFilter, expiringDays, maxTotalStock, minTotalStock]);
+  }, [groupedData, searchTerm, statusFilter, expiringDays, maxTotalStock, minTotalStock, showDisabled]);
 
   const totals = useMemo(() => {
     return filteredData.reduce((acc, medicine) => ({
@@ -266,14 +274,26 @@ const AllMedicinesStock: React.FC = () => {
 
   return (
     <Box p={3}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        All Medicines & Stock
-      </Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <Typography variant="h4" gutterBottom>
+          All Medicines & Stock
+        </Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showDisabled}
+              onChange={e => setShowDisabled(e.target.checked)}
+              color="primary"
+            />
+          }
+          label="Show Disabled Medicines"
+        />
+      </Box>
 
       {/* Filter Row */}
       <Box display="flex" gap={2} alignItems="center" mb={2}>
         <TextField
-          label="Expiring in ≤ (days)"
+          label="Expiring in (days)"
           type="number"
           size="small"
           value={expiringDays}
@@ -284,7 +304,7 @@ const AllMedicinesStock: React.FC = () => {
           }}
         />
         <TextField
-          label="Total Stock ≤"
+          label="Stock Less Than"
           type="number"
           size="small"
           value={maxTotalStock}
@@ -295,7 +315,7 @@ const AllMedicinesStock: React.FC = () => {
           }}
         />
         <TextField
-          label="Total Stock ≥"
+          label="Stock Greater Than"
           type="number"
           size="small"
           value={minTotalStock}

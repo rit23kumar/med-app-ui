@@ -7,7 +7,6 @@ import {
     TableHead,
     TableRow,
     Paper,
-    TablePagination,
     Typography,
     Button,
     Box,
@@ -34,6 +33,11 @@ import {
     ListItemText,
     SelectChangeEvent,
     InputLabel,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Snackbar,
 } from '@mui/material';
 import { Medicine } from '../types/medicine';
 import { medicineApi } from '../services/api';
@@ -50,6 +54,7 @@ import { StockHistory } from '../types/medicine';
 import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
 import { useAuth } from '../contexts/AuthContext';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface PaginationActionsProps {
     count: number;
@@ -188,9 +193,7 @@ export const MedicineList: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchType, setSearchType] = useState<'contains' | 'startsWith'>('startsWith');
-    const [page, setPage] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -204,6 +207,10 @@ export const MedicineList: React.FC = () => {
     const [showStockValue, setShowStockValue] = useState(false);
     const [enabledFilter, setEnabledFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
     const [enabledFilterAnchorEl, setEnabledFilterAnchorEl] = useState<null | HTMLElement>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [medicineToDelete, setMedicineToDelete] = useState<Medicine | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         if (!isAdmin) return;
@@ -219,21 +226,14 @@ export const MedicineList: React.FC = () => {
         fetchGrandTotal();
     }, [isAdmin]);
 
-    const fetchMedicines = async (search?: string, type?: 'contains' | 'startsWith') => {
+    const fetchMedicines = async () => {
         try {
             setLoading(true);
             setError(null);
-            if (search) {
-                const data = await medicineApi.searchMedicines(search, type || searchType);
-                setMedicines(data);
-                setTotalElements(data.length);
-            } else {
-                const response = await medicineApi.getMedicines(page, rowsPerPage);
-                setMedicines(response.content);
-                setTotalElements(response.totalElements);
-            }
+            const data = await medicineApi.getAllMedicines(true);
+            setMedicines(data);
+            setTotalElements(data.length);
         } catch (err) {
-            console.error('Error fetching medicines:', err);
             setError('Failed to fetch medicines');
             setMedicines([]);
         } finally {
@@ -243,20 +243,11 @@ export const MedicineList: React.FC = () => {
 
     useEffect(() => {
         fetchMedicines();
-    }, [page, rowsPerPage]);
+    }, []);
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value);
-        debouncedSearch(event.target.value);
     };
-
-    const debouncedSearch = useCallback(
-        debounce((search: string) => {
-            setPage(0);
-            fetchMedicines(search);
-        }, 500),
-        []
-    );
 
     const handleSearchTypeChange = (
         event: React.MouseEvent<HTMLElement>,
@@ -264,20 +255,7 @@ export const MedicineList: React.FC = () => {
     ) => {
         if (newSearchType !== null) {
             setSearchType(newSearchType);
-            setPage(0);
-            if (searchTerm) {
-                fetchMedicines(searchTerm, newSearchType);
-            }
         }
-    };
-
-    const handleChangePage = (event: unknown, newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
     };
 
     const handleViewDetails = (medicineId: number) => {
@@ -340,17 +318,50 @@ export const MedicineList: React.FC = () => {
     const handleEnabledFilterChange = (event: SelectChangeEvent<'all' | 'enabled' | 'disabled'>) => {
         const value = event.target.value as 'all' | 'enabled' | 'disabled';
         setEnabledFilter(value);
-        setPage(0); // Reset to first page when changing filter
         handleEnabledFilterClose();
     };
 
-    // Filter medicines based on enabled status
+    const handleDeleteClick = (medicine: Medicine) => {
+        setMedicineToDelete(medicine);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!medicineToDelete?.id) return;
+        setDeleteLoading(true);
+        try {
+            await medicineApi.deleteMedicine(medicineToDelete.id);
+            setMedicines(meds => meds.filter(m => m.id !== medicineToDelete.id));
+            setDeleteDialogOpen(false);
+            setMedicineToDelete(null);
+        } catch (err: any) {
+            setDeleteError(err?.response?.data || 'Failed to delete medicine.');
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteDialogOpen(false);
+        setMedicineToDelete(null);
+    };
+
+    // Local search and filter
     const filteredMedicines = medicines.filter(medicine => {
-        if (enabledFilter === 'all') return true;
-        if (enabledFilter === 'enabled') return medicine.enabled;
-        if (enabledFilter === 'disabled') return !medicine.enabled;
-        return true;
+        const name = medicine.name.toLowerCase();
+        const search = searchTerm.toLowerCase();
+        const matches = searchType === 'startsWith'
+            ? name.startsWith(search)
+            : name.includes(search);
+        if (enabledFilter === 'enabled') return medicine.enabled && matches;
+        if (enabledFilter === 'disabled') return !medicine.enabled && matches;
+        return matches;
     });
+
+    // Compute counts for filter options
+    const enabledCount = medicines.filter(m => m.enabled).length;
+    const disabledCount = medicines.filter(m => !m.enabled).length;
+    const allCount = medicines.length;
 
     return (
         <Box>
@@ -641,9 +652,9 @@ export const MedicineList: React.FC = () => {
                                                     label="Filter by Status"
                                                     size="small"
                                                 >
-                                                    <MenuItem value="all">All</MenuItem>
-                                                    <MenuItem value="enabled">Enabled</MenuItem>
-                                                    <MenuItem value="disabled">Disabled</MenuItem>
+                                                    <MenuItem value="all">All ({allCount})</MenuItem>
+                                                    <MenuItem value="enabled">Enabled ({enabledCount})</MenuItem>
+                                                    <MenuItem value="disabled">Disabled ({disabledCount})</MenuItem>
                                                 </Select>
                                             </FormControl>
                                         </Menu>
@@ -719,6 +730,24 @@ export const MedicineList: React.FC = () => {
                                             >
                                                 <VisibilityIcon />
                                             </IconButton>
+                                            {isAdmin && medicine.id !== undefined && (
+                                                <Tooltip
+                                                    title={medicine.enabled ? 'First disable the medicine to enable deletion.' : 'Delete Medicine'}
+                                                    arrow
+                                                    placement="top"
+                                                >
+                                                    <span>
+                                                        <IconButton
+                                                            color="error"
+                                                            onClick={() => handleDeleteClick(medicine)}
+                                                            title="Delete Medicine"
+                                                            disabled={medicine.enabled}
+                                                        >
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -727,33 +756,6 @@ export const MedicineList: React.FC = () => {
                     </Table>
                 </TableContainer>
             )}
-
-            <TablePagination
-                component="div"
-                count={totalElements}
-                page={page}
-                onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                sx={{
-                    borderTop: 1,
-                    borderColor: 'divider',
-                    '& .MuiTablePagination-toolbar': {
-                        minHeight: '52px',
-                        gap: 2,
-                        flexWrap: 'wrap',
-                        justifyContent: isMobile ? 'center' : 'flex-end',
-                        px: isMobile ? 1 : 2
-                    },
-                    '& .MuiTablePagination-displayedRows': {
-                        margin: isMobile ? '8px 0' : 0
-                    },
-                    '& .MuiTablePagination-selectLabel': {
-                        margin: isMobile ? '8px 0' : 0
-                    }
-                }}
-                ActionsComponent={PaginationActions}
-            />
 
             {selectedMedicineId && (
                 <MedicineDetailsDialog
@@ -772,6 +774,30 @@ export const MedicineList: React.FC = () => {
                 medicines={expiringMedicines}
                 loading={loadingExpiring}
             />
+
+            <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+                <DialogTitle>Delete Medicine</DialogTitle>
+                <DialogContent>
+                    <Typography>Are you sure you want to delete <b>{medicineToDelete?.name}</b>? This cannot be undone.</Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteCancel} disabled={deleteLoading}>Cancel</Button>
+                    <Button onClick={handleDeleteConfirm} color="error" disabled={deleteLoading}>
+                        {deleteLoading ? 'Deleting...' : 'Delete'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Snackbar
+                open={!!deleteError}
+                autoHideDuration={6000}
+                onClose={() => setDeleteError(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setDeleteError(null)} severity="error" sx={{ width: '100%' }}>
+                    {deleteError}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }; 
