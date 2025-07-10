@@ -47,6 +47,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import MedicationIcon from '@mui/icons-material/Medication';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { useThemeContext } from '../theme/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { userApi } from '../api/userApi';
@@ -87,7 +88,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [changePasswordDialogOpen]);
 
   const menuItems: MenuItem[] = [
-    { text: 'Sales', path: '/', icon: <ShoppingCartIcon />, role: 'USER' },
+    { text: 'Analytics', path: '/analytics', icon: <BarChartIcon />, role: 'ADMIN' },
+    { text: 'Sales', path: '/sales', icon: <ShoppingCartIcon />, role: 'USER' },
     { text: 'Inventory', path: '/medicine-inventory', icon: <DashboardIcon />, role: 'USER' },
     { text: 'Manage Stock', path: '/manage-stock', icon: <InventoryIcon />, role: 'ADMIN' },
     { text: 'Sale History', path: '/sales-history', icon: <ReceiptIcon />, role: 'USER' },
@@ -216,7 +218,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           isMenuItemVisible(item) && (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
-                selected={location.pathname === item.path}
+                selected={
+                  location.pathname === item.path ||
+                  (item.path === '/analytics' && user?.role === 'ADMIN' && location.pathname === '/')
+                }
                 onClick={() => handleNavigation(item.path)}
                 sx={{
                   '&.Mui-selected': {
@@ -228,7 +233,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 }}
               >
                 <ListItemIcon sx={{ 
-                  color: location.pathname === item.path ? theme.palette.primary.main : theme.palette.text.secondary 
+                  color: (location.pathname === item.path || (item.path === '/analytics' && user?.role === 'ADMIN' && location.pathname === '/')) ? theme.palette.primary.main : theme.palette.text.secondary 
                 }}>
                   {item.icon}
                 </ListItemIcon>
@@ -236,8 +241,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   primary={item.text} 
                   sx={{
                     '& .MuiTypography-root': {
-                      color: location.pathname === item.path ? theme.palette.primary.main : theme.palette.text.primary,
-                      fontWeight: location.pathname === item.path ? 600 : 400
+                      color: (location.pathname === item.path || (item.path === '/analytics' && user?.role === 'ADMIN' && location.pathname === '/')) ? theme.palette.primary.main : theme.palette.text.primary,
+                      fontWeight: (location.pathname === item.path || (item.path === '/analytics' && user?.role === 'ADMIN' && location.pathname === '/')) ? 600 : 400
                     }
                   }}
                 />
