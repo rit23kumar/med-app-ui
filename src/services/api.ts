@@ -1,5 +1,5 @@
 import apiClient from '../api/axiosConfig';
-import { Medicine, MedicineWithStock, PageResponse, BatchMedicineResponse, StockHistory } from '../types/medicine';
+import { Medicine, MedicineWithStock, PageResponse, BatchMedicineResponse, StockHistory, Category } from '../types/medicine';
 import { sell, CreateSellRequest } from '../types/sell';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -78,6 +78,11 @@ export const medicineApi = {
         return response.data;
     },
 
+    updateMedicine: async (medicine: Medicine): Promise<Medicine> => {
+        const response = await apiClient.put(`/medicines/${medicine.id}`, medicine);
+        return response.data;
+    },
+
     getGrandTotalStockValue: async (): Promise<number> => {
         const response = await apiClient.get('/medicines/stock/grand-total');
         return response.data;
@@ -90,6 +95,11 @@ export const medicineApi = {
 
     deleteMedicine: async (id: number): Promise<void> => {
         await apiClient.delete(`/medicines/${id}`);
+    },
+
+    getCategories: async (): Promise<Category[]> => {
+        const response = await apiClient.get('/medicines/categories');
+        return response.data;
     },
 };
 

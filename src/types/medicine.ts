@@ -1,8 +1,15 @@
+export interface Category {
+    id: number;
+    name: string;
+}
+
 export interface Medicine {
     id?: number;
     name: string;
     enabled?: boolean;
     stock?: Stock;
+    category?: Category;
+    categoryId?: number; // for update payload compatibility
 }
 
 export interface Stock {

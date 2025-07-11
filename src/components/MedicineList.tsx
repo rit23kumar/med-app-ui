@@ -55,6 +55,7 @@ import NotificationImportantIcon from '@mui/icons-material/NotificationImportant
 import { useAuth } from '../contexts/AuthContext';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { Category } from '../types/medicine';
 
 interface PaginationActionsProps {
     count: number;
@@ -212,6 +213,7 @@ export const MedicineList: React.FC = () => {
     const [medicineToDelete, setMedicineToDelete] = useState<Medicine | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [snackbarMsg, setSnackbarMsg] = useState<string | null>(null);
+    const [categories, setCategories] = useState<Category[]>([]);
 
     useEffect(() => {
         if (!isAdmin) return;
@@ -226,6 +228,10 @@ export const MedicineList: React.FC = () => {
         };
         fetchGrandTotal();
     }, [isAdmin]);
+
+    useEffect(() => {
+        medicineApi.getCategories().then(setCategories);
+    }, []);
 
     const fetchMedicines = async () => {
         try {
@@ -632,6 +638,7 @@ export const MedicineList: React.FC = () => {
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>ID</TableCell>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>Name</TableCell>
+                                <TableCell sx={{ fontWeight: 600, py: 2 }}>Category</TableCell>
                                 <TableCell sx={{ fontWeight: 600, py: 2 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         <span style={{ fontWeight: 500 }}>Enabled</span>
@@ -714,6 +721,37 @@ export const MedicineList: React.FC = () => {
                                             />
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
+                                        <TableCell>
+                                            {isAdmin ? (
+                                                <FormControl size="small" fullWidth>
+                                                    <Select
+                                                        value={medicine.category?.id || ''}
+                                                        onChange={async (e) => {
+                                                            const newCatId = e.target.value;
+                                                            const newCat = categories.find(c => c.id === newCatId);
+                                                            if (newCat) {
+                                                                // Update backend
+                                                                await medicineApi.updateMedicine({
+                                                                    id: medicine.id,
+                                                                    name: medicine.name,
+                                                                    enabled: medicine.enabled,
+                                                                    categoryId: newCat.id
+                                                                });
+                                                                // Update local state
+                                                                setMedicines(meds => meds.map(m => m.id === medicine.id ? { ...m, category: newCat } : m));
+                                                            }
+                                                        }}
+                                                        disabled={!isAdmin}
+                                                    >
+                                                        {categories.map(cat => (
+                                                            <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+                                            ) : (
+                                                <span>{medicine.category?.name || ''}</span>
+                                            )}
+                                        </TableCell>
                                         <TableCell>
                                             <Checkbox
                                                 checked={!!medicine.enabled}
