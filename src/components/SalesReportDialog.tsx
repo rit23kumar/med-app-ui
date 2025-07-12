@@ -18,6 +18,8 @@ import QrCodeIcon from '@mui/icons-material/QrCode';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CreditCardOffIcon from '@mui/icons-material/CreditCardOff';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import { format, isSameDay } from 'date-fns';
 import { sell } from '../types/sell';
 import { formatIndianCurrency } from '../utils/formatCurrency';
@@ -131,10 +133,10 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                         </Grid>
                         <Grid item xs={12}>
                             <Paper sx={cardStyles(isDark ? theme.palette.success.dark : '#e8f5e9')}>
-                                <AttachMoneyIcon color="success" fontSize="medium" />
+                                <CurrencyRupeeIcon color="success" fontSize="medium" />
                                 <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
                                     <Typography variant="subtitle1" gutterBottom>
-                                        Actual Paid: ₹{formatIndianCurrency(totalAmountPaid)}
+                                        Amount Recieved: ₹{formatIndianCurrency(upfrontPaymentsTotal-pendingAmount)}
                                     </Typography>
                                     <Box>
                                         <Typography variant="subtitle1" color="error" >
@@ -181,7 +183,7 @@ const SalesReportDialog: React.FC<SalesReportDialogProps> = ({
                         </Grid>
                         <Grid item xs={12}>
                             <Paper sx={cardStyles(isDark ? theme.palette.secondary.dark : '#ffe0b2')}>
-                                <AccountBalanceWalletIcon color="secondary" fontSize="medium" />
+                                <CreditCardOffIcon color="secondary" fontSize="medium" />
                                 <Typography variant="subtitle1" gutterBottom>
                                     Pay Later: ₹{formatIndianCurrency(payLaterTotal)}
                                 </Typography>

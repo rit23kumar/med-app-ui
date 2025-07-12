@@ -40,6 +40,31 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import { formatIndianCurrency } from "../utils/formatCurrency";
+// Category icon mapping
+import TabletIcon from '@mui/icons-material/Tablet';
+import MedicationLiquidIcon from '@mui/icons-material/MedicationLiquid';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import HealingIcon from '@mui/icons-material/Healing';
+import OpacityIcon from '@mui/icons-material/Opacity';
+import BlurOnIcon from '@mui/icons-material/BlurOn';
+import FilterVintageIcon from '@mui/icons-material/FilterVintage';
+import AirIcon from '@mui/icons-material/Air';
+import SprayIcon from '@mui/icons-material/Grain';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+
+const categoryIconMap: Record<string, React.ReactNode> = {
+  Tablet: <TabletIcon fontSize="small" sx={{ color: '#1976d2' }} />,
+  Capsule: <MedicationLiquidIcon fontSize="small" sx={{ color: '#388e3c' }} />,
+  Syrup: <LocalHospitalIcon fontSize="small" sx={{ color: '#fbc02d' }} />,
+  Suspension: <HealingIcon fontSize="small" sx={{ color: '#7b1fa2' }} />,
+  Injection: <OpacityIcon fontSize="small" sx={{ color: '#d32f2f' }} />,
+  Ointment: <BlurOnIcon fontSize="small" sx={{ color: '#0288d1' }} />,
+  Powder: <FilterVintageIcon fontSize="small" sx={{ color: '#f57c00' }} />,
+  Drops: <OpacityIcon fontSize="small" sx={{ color: '#0288d1' }} />,
+  Inhaler: <AirIcon fontSize="small" sx={{ color: '#1976d2' }} />,
+  Spray: <SprayIcon fontSize="small" sx={{ color: '#388e3c' }} />,
+  Others: <MoreHorizIcon fontSize="small" sx={{ color: '#757575' }} />,
+};
 
 interface sellItem {
   medicineId: number;
@@ -743,6 +768,12 @@ export const SellMedicine: React.FC = () => {
                 onChange={(_, newValue: Medicine | null) =>
                   setSelectedMedicine(newValue)
                 }
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {categoryIconMap[option.category?.name || 'Others']}
+                    <span>{option.name}</span>
+                  </li>
+                )}
                 renderInput={(params: AutocompleteRenderInputParams) => (
                   <TextField
                     {...params}
@@ -902,7 +933,7 @@ export const SellMedicine: React.FC = () => {
                             ),
                           }}
                         >
-                          {formatExpiryText(item.expDate)}
+                          {item.expDate}
                         </Typography>
                       </TableCell>
                       <TableCell>{item.quantity}</TableCell>
@@ -1385,21 +1416,23 @@ export const SellMedicine: React.FC = () => {
                     Total Amount: ₹{formatIndianCurrency(calculateTotal())}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Amount Paid"
-                    type="number"
-                    value={amountPaid}
-                    onChange={(e) => setAmountPaid(e.target.value)}
-                    size="small"
-                    fullWidth
-                    inputProps={{
-                      min: 0,
-                      step: 0.01,
-                    }}
-                    placeholder={`₹${formatIndianCurrency(calculateTotal())}`}
-                  />
-                </Grid>
+                {(modeOfPayment !== 'Ward Use' && modeOfPayment !== 'Pay Later') && (
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Amount Paid"
+                      type="number"
+                      value={amountPaid}
+                      onChange={(e) => setAmountPaid(e.target.value)}
+                      size="small"
+                      fullWidth
+                      inputProps={{
+                        min: 0,
+                        step: 0.01,
+                      }}
+                      placeholder={`₹${formatIndianCurrency(calculateTotal())}`}
+                    />
+                  </Grid>
+                )}
               </Grid>
             </Box>
 

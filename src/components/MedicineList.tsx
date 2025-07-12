@@ -56,6 +56,9 @@ import { useAuth } from '../contexts/AuthContext';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Category } from '../types/medicine';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 interface PaginationActionsProps {
     count: number;
@@ -214,6 +217,9 @@ export const MedicineList: React.FC = () => {
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [snackbarMsg, setSnackbarMsg] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [editRowId, setEditRowId] = useState<number | null>(null);
+    const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
+    const [editEnabled, setEditEnabled] = useState<boolean | null>(null);
 
     useEffect(() => {
         if (!isAdmin) return;
@@ -695,106 +701,157 @@ export const MedicineList: React.FC = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredMedicines.map((medicine) => (
-                                    <TableRow 
-                                        key={medicine.id}
-                                        sx={{ 
-                                            '&:hover': { 
-                                                backgroundColor: alpha(theme.palette.primary.main, 0.02)
-                                            },
-                                            transition: 'background-color 0.2s ease-in-out',
-                                            '& .MuiTableCell-root': {
-                                                py: 1.5
-                                            }
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Chip 
-                                                label={medicine.id} 
-                                                size="small" 
-                                                sx={{ 
-                                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                                    color: theme.palette.primary.main,
-                                                    fontWeight: 500,
-                                                    height: '28px'
-                                                }}
-                                            />
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
-                                        <TableCell>
-                                            {isAdmin ? (
-                                                <FormControl size="small" fullWidth>
-                                                    <Select
-                                                        value={medicine.category?.id || ''}
-                                                        onChange={async (e) => {
-                                                            const newCatId = e.target.value;
-                                                            const newCat = categories.find(c => c.id === newCatId);
-                                                            if (newCat) {
-                                                                // Update backend
-                                                                await medicineApi.updateMedicine({
-                                                                    id: medicine.id,
-                                                                    name: medicine.name,
-                                                                    enabled: medicine.enabled,
-                                                                    categoryId: newCat.id
-                                                                });
-                                                                // Update local state
-                                                                setMedicines(meds => meds.map(m => m.id === medicine.id ? { ...m, category: newCat } : m));
-                                                            }
-                                                        }}
-                                                        disabled={!isAdmin}
-                                                    >
-                                                        {categories.map(cat => (
-                                                            <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-                                            ) : (
-                                                <span>{medicine.category?.name || ''}</span>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Checkbox
-                                                checked={!!medicine.enabled}
-                                                disabled={!isAdmin}
-                                                onChange={() => isAdmin && handleToggleEnabled(medicine)}
-                                                color={medicine.enabled ? 'primary' : 'default'}
-                                                inputProps={{ 'aria-label': 'Enable/Disable medicine' }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <IconButton
-                                                size="medium"
-                                                color="primary"
-                                                onClick={() => handleViewDetails(medicine.id!)}
-                                                sx={{ 
-                                                    '&:hover': {
-                                                        backgroundColor: alpha(theme.palette.primary.main, 0.1)
-                                                    }
-                                                }}
-                                            >
-                                                <VisibilityIcon />
-                                            </IconButton>
-                                            {isAdmin && medicine.id !== undefined && (
-                                                <Tooltip
-                                                    title={medicine.enabled ? 'First disable the medicine to enable deletion.' : 'Delete Medicine'}
-                                                    arrow
-                                                    placement="top"
-                                                >
-                                                    <span>
-                                                        <IconButton
-                                                            color="error"
-                                                            onClick={() => handleDeleteClick(medicine)}
-                                                            title="Delete Medicine"
-                                                            disabled={medicine.enabled}
+                                filteredMedicines.map((medicine) => {
+                                    const isEditing = isAdmin && editRowId === medicine.id;
+                                    return (
+                                        <TableRow 
+                                            key={medicine.id}
+                                            sx={{ 
+                                                '&:hover': { 
+                                                    backgroundColor: alpha(theme.palette.primary.main, 0.02)
+                                                },
+                                                transition: 'background-color 0.2s ease-in-out',
+                                                '& .MuiTableCell-root': {
+                                                    py: 1.5
+                                                }
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Chip 
+                                                    label={medicine.id} 
+                                                    size="small" 
+                                                    sx={{ 
+                                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                                        color: theme.palette.primary.main,
+                                                        fontWeight: 500,
+                                                        height: '28px'
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 500 }}>{medicine.name}</TableCell>
+                                            <TableCell>
+                                                {isEditing ? (
+                                                    <FormControl size="small" fullWidth>
+                                                        <Select
+                                                            value={editCategoryId ?? medicine.category?.id ?? ''}
+                                                            onChange={e => setEditCategoryId(Number(e.target.value))}
                                                         >
-                                                            <DeleteIcon />
+                                                            {categories.map(cat => (
+                                                                <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                ) : (
+                                                    <span>{medicine.category?.name || ''}</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {isEditing ? (
+                                                    <Checkbox
+                                                        checked={!!editEnabled}
+                                                        onChange={e => setEditEnabled(e.target.checked)}
+                                                        color={editEnabled ? 'primary' : 'default'}
+                                                    />
+                                                ) : (
+                                                    <Checkbox
+                                                        checked={!!medicine.enabled}
+                                                        disabled
+                                                        color={medicine.enabled ? 'primary' : 'default'}
+                                                    />
+                                                )}
+                                            </TableCell>
+                                            {/* Combine all actions into a single TableCell */}
+                                            <TableCell>
+                                            <IconButton
+                                                    size="medium"
+                                                    color="primary"
+                                                    onClick={() => handleViewDetails(medicine.id!)}
+                                                    sx={{ 
+                                                        '&:hover': {
+                                                            backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                                                        }
+                                                    }}
+                                                >
+                                                    <VisibilityIcon />
+                                                </IconButton>
+                                                {isAdmin && (
+                                                    isEditing ? (
+                                                        <>
+                                                            <IconButton
+                                                                color="primary"
+                                                                onClick={() => {
+                                                                    // Optimistically exit edit mode
+                                                                    setEditRowId(null);
+                                                                    setSnackbarMsg('Saving...');
+                                                                    // Async update
+                                                                    (async () => {
+                                                                        try {
+                                                                            await medicineApi.updateMedicine({
+                                                                                id: medicine.id,
+                                                                                name: medicine.name,
+                                                                                enabled: editEnabled ?? medicine.enabled,
+                                                                                categoryId: editCategoryId ?? medicine.category?.id
+                                                                            });
+                                                                            setMedicines(meds => meds.map(m => m.id === medicine.id ? {
+                                                                                ...m,
+                                                                                enabled: editEnabled ?? medicine.enabled,
+                                                                                category: categories.find(c => c.id === (editCategoryId ?? medicine.category?.id)) || m.category
+                                                                            } : m));
+                                                                            setSnackbarMsg(`${medicine.name} updated successfully.`);
+                                                                        } catch (e) {
+                                                                            setSnackbarMsg('Failed to update medicine.');
+                                                                        }
+                                                                    })();
+                                                                }}
+                                                            >
+                                                                <SaveIcon />
+                                                            </IconButton>
+                                                            <IconButton
+                                                                color="error"
+                                                                onClick={() => setEditRowId(null)}
+                                                            >
+                                                                <CancelIcon />
+                                                            </IconButton>
+                                                        </>
+                                                    ) : (
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => {
+                                                                setEditRowId(medicine.id!);
+                                                                setEditCategoryId(medicine.category?.id ?? null);
+                                                                setEditEnabled(medicine.enabled ?? false);
+                                                            }}
+                                                        >
+                                                            <EditIcon />
                                                         </IconButton>
-                                                    </span>
-                                                </Tooltip>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                                    )
+                                                )}
+                                                {isAdmin && medicine.id !== undefined && (
+                                                    <Tooltip
+                                                        title={medicine.enabled ? 'First disable the medicine to enable deletion.' : 'Delete Medicine'}
+                                                        arrow
+                                                        placement="top"
+                                                    >
+                                                        <span>
+                                                            <IconButton
+                                                                color="error"
+                                                                onClick={() => {
+                                                                    // Optimistically close dialog
+                                                                    setDeleteDialogOpen(true);
+                                                                    setMedicineToDelete(medicine);
+                                                                }}
+                                                                title="Delete Medicine"
+                                                                disabled={medicine.enabled}
+                                                            >
+                                                                <DeleteIcon />
+                                                            </IconButton>
+                                                        </span>
+                                                    </Tooltip>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>
