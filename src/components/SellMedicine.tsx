@@ -53,17 +53,17 @@ import SprayIcon from '@mui/icons-material/Grain';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 
 const categoryIconMap: Record<string, React.ReactNode> = {
-  Tablet: <TabletIcon fontSize="small" sx={{ color: '#1976d2' }} />,
-  Capsule: <MedicationLiquidIcon fontSize="small" sx={{ color: '#388e3c' }} />,
-  Syrup: <LocalHospitalIcon fontSize="small" sx={{ color: '#fbc02d' }} />,
-  Suspension: <HealingIcon fontSize="small" sx={{ color: '#7b1fa2' }} />,
-  Injection: <OpacityIcon fontSize="small" sx={{ color: '#d32f2f' }} />,
-  Ointment: <BlurOnIcon fontSize="small" sx={{ color: '#0288d1' }} />,
-  Powder: <FilterVintageIcon fontSize="small" sx={{ color: '#f57c00' }} />,
-  Drops: <OpacityIcon fontSize="small" sx={{ color: '#0288d1' }} />,
-  Inhaler: <AirIcon fontSize="small" sx={{ color: '#1976d2' }} />,
-  Spray: <SprayIcon fontSize="small" sx={{ color: '#388e3c' }} />,
-  Others: <MoreHorizIcon fontSize="small" sx={{ color: '#757575' }} />,
+  Tablet: <TabletIcon fontSize="large" sx={{ color: '#1976d2' }} />,
+  Capsule: <MedicationLiquidIcon fontSize="large" sx={{ color: '#388e3c' }} />,
+  Syrup: <LocalHospitalIcon fontSize="large" sx={{ color: '#fbc02d' }} />,
+  Suspension: <HealingIcon fontSize="large" sx={{ color: '#7b1fa2' }} />,
+  Injection: <OpacityIcon fontSize="large" sx={{ color: '#d32f2f' }} />,
+  Ointment: <BlurOnIcon fontSize="large" sx={{ color: '#0288d1' }} />,
+  Powder: <FilterVintageIcon fontSize="large" sx={{ color: '#f57c00' }} />,
+  Drops: <OpacityIcon fontSize="large" sx={{ color: '#0288d1' }} />,
+  Inhaler: <AirIcon fontSize="large" sx={{ color: '#1976d2' }} />,
+  Spray: <SprayIcon fontSize="large" sx={{ color: '#388e3c' }} />,
+  Others: <MoreHorizIcon fontSize="large" sx={{ color: '#757575' }} />,
 };
 
 interface sellItem {
@@ -768,12 +768,78 @@ export const SellMedicine: React.FC = () => {
                 onChange={(_, newValue: Medicine | null) =>
                   setSelectedMedicine(newValue)
                 }
-                renderOption={(props, option) => (
-                  <li {...props} key={option.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {categoryIconMap[option.category?.name || 'Others']}
-                    <span>{option.name}</span>
-                  </li>
+                ListboxProps={{
+                  sx: {
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr 1fr', // 2 per row on extra small
+                      sm: '1fr 1fr', // 2 per row on small
+                      md: '1fr 1fr 1fr', // 3 per row on medium
+                      lg: '1fr 1fr 1fr 1fr', // 4 per row on large
+                    },
+                    gap: 1,
+                    p: 1,
+                    background: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fafbfc',
+                  },
+                }}
+                PaperComponent={(props) => (
+                  <Paper
+                    {...props}
+                    sx={{
+                      mt: 1,
+                      boxShadow: 3,
+                      borderRadius: 2,
+                      maxHeight: 400,
+                      overflowY: 'auto',
+                      minWidth: 350,
+                      background: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fafbfc',
+                    }}
+                  />
                 )}
+                renderOption={(props, option) => {
+                  const isDark = theme.palette.mode === 'dark';
+                  return (
+                    <li
+                      {...props}
+                      key={option.id}
+                      style={{
+                        padding: 0,
+                        margin: 0,
+                        listStyle: 'none',
+                        display: 'block',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          p: 1.2,
+                          borderRadius: 1,
+                          border: `1px solid ${isDark ? theme.palette.divider : '#eee'}`,
+                          background: isDark ? theme.palette.background.paper : '#fff',
+                          minHeight: 64,
+                          boxShadow: 1,
+                          cursor: 'pointer',
+                          transition: 'box-shadow 0.2s',
+                          '&:hover': { boxShadow: 4, borderColor: 'primary.main' },
+                        }}
+                      >
+                        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', height: '100%' }}>
+                          {categoryIconMap[option.category?.name || 'Others']}
+                        </Box>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontFamily: 'var(--font-inter),sans-serif', fontWeight: 500, mb: -1, color: isDark ? theme.palette.text.primary : undefined }}>
+                            {option.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ mt: 0, color: isDark ? theme.palette.text.secondary : 'text.secondary' }}>
+                            Available: {option.available ?? 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </li>
+                  );
+                }}
                 renderInput={(params: AutocompleteRenderInputParams) => (
                   <TextField
                     {...params}

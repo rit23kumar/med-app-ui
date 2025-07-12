@@ -72,7 +72,7 @@ const Row: React.FC<RowProps> = ({ medicine }) => {
   const sortedBatches = [...medicine.batches].sort((a, b) => new Date(a.expDate).getTime() - new Date(b.expDate).getTime());
 
   const formatExpiryDate = (expDate: string) => {
-    if (!expDate) return 'N/A';
+    if (!expDate) return <Typography component="span" color="error" fontWeight={500}>No Batch Available</Typography>;
     try {
       return format(parseISO(expDate), 'dd-MMM-yyyy');
     } catch {
@@ -94,7 +94,7 @@ const Row: React.FC<RowProps> = ({ medicine }) => {
           <Typography variant="h6" sx={{ fontFamily:"Times New Roman", fontWeight: 500, color: '#ed6c02', letterSpacing: '0.5px'  }}>
             {medicine.name}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: -0.5, fontWeight:200 }}>
             Total Stock: <b>{medicine.totalStock}</b>
           </Typography>
         </Box>

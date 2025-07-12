@@ -10,6 +10,7 @@ export interface Medicine {
     stock?: Stock;
     category?: Category;
     categoryId?: number; // for update payload compatibility
+    available?: number; // total available quantity across all batches
 }
 
 export interface Stock {

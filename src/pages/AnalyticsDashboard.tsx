@@ -10,6 +10,7 @@ import Tooltip from '@mui/material/Tooltip';
 import type { TooltipProps } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import type { TooltipProps as PieTooltipProps } from 'recharts';
+import { useTheme } from '@mui/material/styles';
 
 const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length > 0) {
@@ -29,22 +30,55 @@ const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) =
 };
 
 const CustomDonutTooltip = ({ active, payload }: PieTooltipProps<ValueType, NameType>) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   if (active && payload && payload.length > 0) {
     const { name, value, medicines } = payload[0].payload;
     const isOneMonth = name && name.includes('Expiring in 1 month');
     return (
-      <Box sx={{ p: 1.5, minWidth: 180, bgcolor: '#fff', borderRadius: 2, boxShadow: 3, border: '1px solid #eee' }}>
-        <Typography variant="subtitle2">{name}</Typography>
-        <Typography variant="body2" color="text.secondary">Count: {value}</Typography>
+      <Box
+        sx={{
+          p: 1.5,
+          minWidth: 180,
+          bgcolor: isDark ? theme.palette.background.paper : '#fff',
+          color: isDark ? theme.palette.text.primary : 'inherit',
+          borderRadius: 2,
+          boxShadow: 3,
+          border: isDark ? '1px solid #444' : '1px solid #eee',
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ color: isDark ? theme.palette.text.primary : 'inherit' }}>{name}</Typography>
+        <Typography variant="body2" color={isDark ? theme.palette.text.secondary : 'text.secondary'}>Count: {value}</Typography>
         {isOneMonth && medicines && medicines.length > 0 && (
           <Box mt={1}>
-            <Typography variant="caption" color="text.secondary">Expiring Medicines:</Typography>
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
+            <Typography variant="caption" color={isDark ? theme.palette.text.secondary : 'text.secondary'}>Expiring Medicines:</Typography>
+            <Box>
               {medicines.slice(0, 10).map((med: string, idx: number) => (
-                <li key={idx} style={{ fontSize: 12 }}>{med}</li>
+                <Box
+                  key={idx}
+                  sx={{
+                    mb: 1,
+                    p: 1,
+                    border: isDark ? '1px solid #444' : '1px solid #eee',
+                    borderRadius: 1,
+                    background: isDark ? '#222' : '#fafafa',
+                    fontSize: 13,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: isDark ? theme.palette.text.primary : 'inherit',
+                  }}
+                >
+                  <span role="img" aria-label="pill">💊</span>
+                  <span>{med}</span>
+                </Box>
               ))}
-              {medicines.length > 10 && <li style={{ fontSize: 12 }}>...and {medicines.length - 10} more</li>}
-            </ul>
+              {medicines.length > 10 && (
+                <Box sx={{ fontSize: 12, color: isDark ? theme.palette.text.secondary : 'text.secondary' }}>
+                  ...and {medicines.length - 10} more
+                </Box>
+              )}
+            </Box>
           </Box>
         )}
       </Box>
@@ -61,6 +95,8 @@ const AnalyticsDashboard: React.FC = () => {
   const [stock, setStock] = useState<any[]>([]);
   // Month picker state (YYYY-MM)
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  // Custom label for donut chart: show percent only, centered
+  const renderDonutLabel = ({ percent }: { percent: number }) => `${(percent * 100).toFixed(0)}%`;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -167,9 +203,6 @@ const AnalyticsDashboard: React.FC = () => {
   });
   const donutData = expiringStatusCounts.filter(e => e.count > 0).map(e => ({ name: `${e.icon} ${e.label}`, value: e.count, color: e.color, medicines: e.medicines }));
 
-  // Custom label for donut chart: show percent only, centered
-  const renderDonutLabel = ({ percent }: { percent: number }) => `${(percent * 100).toFixed(0)}%`;
-
   if (loading) {
     return <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px"><CircularProgress /></Box>;
   }
@@ -273,6 +306,7 @@ const AnalyticsDashboard: React.FC = () => {
                   paddingAngle={2}
                   label={renderDonutLabel}
                   labelLine={false}
+                  minAngle={10}
                 >
                   {donutData.map((entry, idx) => (
                     <Cell key={`cell-${idx}`} fill={entry.color} />

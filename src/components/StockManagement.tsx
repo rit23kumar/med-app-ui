@@ -382,9 +382,12 @@ const StockManagement: React.FC = () => {
 
       const purchased = parseInt(newData.purchasedQuantity, 10);
       const available = parseInt(newData.availableQuantity, 10);
+      const price = newData.price;
 
       let error: string | null = null;
-      if (!isNaN(purchased) && !isNaN(available) && available > purchased) {
+      if (!newData.purchasedQuantity || !newData.availableQuantity || !newData.price) {
+        error = "Purchased quantity, Available quantity, and Unit Price cannot be empty. Hint - Keep it 0.";
+      } else if (!isNaN(purchased) && !isNaN(available) && available > purchased) {
         error = "Available quantity cannot be greater than purchased quantity.";
       }
 
@@ -398,6 +401,10 @@ const StockManagement: React.FC = () => {
 
   const handleSaveEdit = () => {
     if (!editBatch.batch) return;
+    if (!editBatch.data.purchasedQuantity || !editBatch.data.availableQuantity || !editBatch.data.price) {
+      setEditBatch(prev => ({ ...prev, error: "Purchased qty, available qty, and unit price cannot be empty." }));
+      return;
+    }
     setReviewOldValues({
       purchasedQuantity: String(editBatch.batch.quantity),
       availableQuantity: String(editBatch.batch.availableQuantity),
@@ -558,8 +565,7 @@ const StockManagement: React.FC = () => {
                   mb={2}
                 >
                   <Typography variant="h6">
-                    Stock History - {selectedMedicine.name} (Total Available:{" "}
-                    {totalAvailable})
+                    Stock History - {selectedMedicine.name} (Total Available: <b>{totalAvailable}</b>)
                   </Typography>
                   <FormControlLabel
                     control={
@@ -848,13 +854,43 @@ const StockManagement: React.FC = () => {
                 <Grid item xs={4}><Typography variant="body2" fontWeight={600} sx={{ color: '#388e3c' }}>New Value</Typography></Grid>
                 <Grid item xs={4}><Typography variant="body2">Purchased Qty</Typography></Grid>
                 <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.purchasedQuantity}</Typography></Grid>
-                <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.purchasedQuantity}</Typography></Grid>
+                <Grid item xs={4}>
+                  <Typography
+                    sx={
+                      reviewOldValues?.purchasedQuantity !== reviewNewValues?.purchasedQuantity
+                        ? { color: '#388e3c', fontWeight: 700, bgcolor: '#fff59d', borderRadius: 1, px: 1 }
+                        : { color: '#388e3c' }
+                    }
+                  >
+                    {reviewNewValues?.purchasedQuantity}
+                  </Typography>
+                </Grid>
                 <Grid item xs={4}><Typography variant="body2">Available Qty</Typography></Grid>
                 <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.availableQuantity}</Typography></Grid>
-                <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.availableQuantity}</Typography></Grid>
+                <Grid item xs={4}>
+                  <Typography
+                    sx={
+                      reviewOldValues?.availableQuantity !== reviewNewValues?.availableQuantity
+                        ? { color: '#388e3c', fontWeight: 700, bgcolor: '#fff59d', borderRadius: 1, px: 1 }
+                        : { color: '#388e3c' }
+                    }
+                  >
+                    {reviewNewValues?.availableQuantity}
+                  </Typography>
+                </Grid>
                 <Grid item xs={4}><Typography variant="body2">Unit Price</Typography></Grid>
                 <Grid item xs={4}><Typography sx={{ color: '#d32f2f' }}>{reviewOldValues?.price}</Typography></Grid>
-                <Grid item xs={4}><Typography sx={{ color: '#388e3c' }}>{reviewNewValues?.price}</Typography></Grid>
+                <Grid item xs={4}>
+                  <Typography
+                    sx={
+                      reviewOldValues?.price !== reviewNewValues?.price
+                        ? { color: '#388e3c', fontWeight: 700, bgcolor: '#fff59d', borderRadius: 1, px: 1 }
+                        : { color: '#388e3c' }
+                    }
+                  >
+                    {reviewNewValues?.price}
+                  </Typography>
+                </Grid>
               </Grid>
             </DialogContent>
             <DialogActions>
